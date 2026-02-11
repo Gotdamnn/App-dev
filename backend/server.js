@@ -10,7 +10,7 @@ app.use(cors());
 const pool = new Pool({
     user: 'postgres',  // Change to your PostgreSQL user
     host: 'localhost',
-    database: 'patientpulse',  // Change to your database name
+    database: 'appdevdb',  // Your existing database
     password: 'password',  // Change to your PostgreSQL password
     port: 5432,
 });
@@ -19,7 +19,7 @@ const pool = new Pool({
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        const result = await pool.query('SELECT id, email, name FROM admins WHERE email = $1 AND password = $2', [email, password]);
+        const result = await pool.query('SELECT * FROM admin_login WHERE email = $1 AND password = $2', [email, password]);
         if (result.rows.length > 0) {
             res.json({ success: true, user: result.rows[0] });
         } else {
@@ -105,7 +105,7 @@ app.delete('/api/patients/:id', async (req, res) => {
 // Get all devices
 app.get('/api/devices', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM devices ORDER BY created_at DESC');
+        const result = await pool.query('SELECT * FROM "Device" ORDER BY id DESC');
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -115,7 +115,7 @@ app.get('/api/devices', async (req, res) => {
 // Get device by ID
 app.get('/api/devices/:id', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM devices WHERE id = $1', [req.params.id]);
+        const result = await pool.query('SELECT * FROM "Device" WHERE id = $1', [req.params.id]);
         if (result.rows.length > 0) {
             res.json(result.rows[0]);
         } else {
@@ -131,7 +131,7 @@ app.post('/api/devices', async (req, res) => {
     const { name, device_id, board_type, location, status, signal_strength } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO devices (name, device_id, board_type, location, status, signal_strength, last_data_time) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING *',
+            'INSERT INTO "Device" (name, device_id, board_type, location, status, signal_strength, last_data_time) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING *',
             [name, device_id, board_type, location, status, signal_strength]
         );
         res.status(201).json(result.rows[0]);
@@ -145,7 +145,7 @@ app.put('/api/devices/:id', async (req, res) => {
     const { name, device_id, board_type, location, status, signal_strength } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE devices SET name = $1, device_id = $2, board_type = $3, location = $4, status = $5, signal_strength = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
+            'UPDATE "Device" SET name = $1, device_id = $2, board_type = $3, location = $4, status = $5, signal_strength = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
             [name, device_id, board_type, location, status, signal_strength, req.params.id]
         );
         if (result.rows.length > 0) {
@@ -161,7 +161,7 @@ app.put('/api/devices/:id', async (req, res) => {
 // Delete device
 app.delete('/api/devices/:id', async (req, res) => {
     try {
-        const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING *', [req.params.id]);
+        const result = await pool.query('DELETE FROM "Device" WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
             res.json({ success: true, message: 'Device deleted' });
         } else {
@@ -177,9 +177,9 @@ app.delete('/api/devices/:id', async (req, res) => {
 app.get('/api/alerts', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT a.*, p.name as patient_name FROM alerts a
+            SELECT a.*, p.name as patient_name FROM alert a
             LEFT JOIN patients p ON a.patient_id = p.id
-            ORDER BY a.created_at DESC
+            ORDER BY a.id DESC
         `);
         res.json(result.rows);
     } catch (err) {
@@ -191,7 +191,7 @@ app.get('/api/alerts', async (req, res) => {
 app.get('/api/alerts/:id', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT a.*, p.name as patient_name FROM alerts a
+            SELECT a.*, p.name as patient_name FROM alert a
             LEFT JOIN patients p ON a.patient_id = p.id
             WHERE a.id = $1
         `, [req.params.id]);
@@ -210,7 +210,7 @@ app.post('/api/alerts', async (req, res) => {
     const { patient_id, alert_type, severity, values, normal_range, status, icon_class } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO alerts (patient_id, alert_type, severity, values, normal_range, status, icon_class) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            'INSERT INTO alert (patient_id, alert_type, severity, values, normal_range, status, icon_class) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
             [patient_id, alert_type, severity, values, normal_range, status, icon_class]
         );
         res.status(201).json(result.rows[0]);
@@ -224,7 +224,7 @@ app.put('/api/alerts/:id', async (req, res) => {
     const { alert_type, severity, values, normal_range, status, icon_class } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE alerts SET alert_type = $1, severity = $2, values = $3, normal_range = $4, status = $5, icon_class = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
+            'UPDATE alert SET alert_type = $1, severity = $2, values = $3, normal_range = $4, status = $5, icon_class = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
             [alert_type, severity, values, normal_range, status, icon_class, req.params.id]
         );
         if (result.rows.length > 0) {
@@ -240,7 +240,7 @@ app.put('/api/alerts/:id', async (req, res) => {
 // Delete alert
 app.delete('/api/alerts/:id', async (req, res) => {
     try {
-        const result = await pool.query('DELETE FROM alerts WHERE id = $1 RETURNING *', [req.params.id]);
+        const result = await pool.query('DELETE FROM alert WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
             res.json({ success: true, message: 'Alert deleted' });
         } else {
