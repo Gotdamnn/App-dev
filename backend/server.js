@@ -11,8 +11,31 @@ const pool = new Pool({
     user: 'postgres',  // Change to your PostgreSQL user
     host: 'localhost',
     database: 'appdevdb',  // Your existing database
-    password: 'password',  // Change to your PostgreSQL password
+    password: 'Carlzabala@123',  // Change to your PostgreSQL password
     port: 5432,
+});
+
+// Test database connection with timeout
+const testConnection = async () => {
+    try {
+        const result = await pool.query('SELECT NOW()');
+        console.log('✅ DATABASE CONNECTED SUCCESSFULLY');
+        console.log('   Server time:', result.rows[0]);
+    } catch (err) {
+        console.error('❌ DATABASE CONNECTION FAILED');
+        console.error('   Error:', err.message);
+        console.error('   Please check:');
+        console.error('   - Is PostgreSQL running?');
+        console.error('   - Is pgAdmin accessible?');
+        console.error('   - Database credentials correct? (user: postgres, host: localhost, database: appdevdb)');
+    }
+};
+
+// Test connection after a short delay
+setTimeout(testConnection, 1000);
+
+pool.on('error', (err) => {
+    console.error('🔴 Pool Error:', err.message);
 });
 
 // ===== AUTHENTICATION =====
@@ -57,11 +80,11 @@ app.get('/api/patients/:id', async (req, res) => {
 
 // Create new patient
 app.post('/api/patients', async (req, res) => {
-    const { name, patient_id, status, body_temperature, last_visit, email } = req.body;
+    const { name, status, body_temperature, last_visit, email } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO patients (name, patient_id, status, body_temperature, last_visit, email) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [name, patient_id, status, body_temperature, last_visit, email]
+            'INSERT INTO patients (name, status, body_temperature, last_visit, email) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [name, status, body_temperature, last_visit, email]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -71,11 +94,11 @@ app.post('/api/patients', async (req, res) => {
 
 // Update patient
 app.put('/api/patients/:id', async (req, res) => {
-    const { name, patient_id, status, body_temperature, last_visit, email } = req.body;
+    const { name, status, body_temperature, last_visit, email } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE patients SET name = $1, patient_id = $2, status = $3, body_temperature = $4, last_visit = $5, email = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
-            [name, patient_id, status, body_temperature, last_visit, email, req.params.id]
+            'UPDATE patients SET name = $1, status = $2, body_temperature = $3, last_visit = $4, email = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *',
+            [name, status, body_temperature, last_visit, email, req.params.id]
         );
         if (result.rows.length > 0) {
             res.json(result.rows[0]);
@@ -105,7 +128,7 @@ app.delete('/api/patients/:id', async (req, res) => {
 // Get all devices
 app.get('/api/devices', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM "Device" ORDER BY id DESC');
+        const result = await pool.query('SELECT * FROM devices ORDER BY id DESC');
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -115,7 +138,7 @@ app.get('/api/devices', async (req, res) => {
 // Get device by ID
 app.get('/api/devices/:id', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM "Device" WHERE id = $1', [req.params.id]);
+        const result = await pool.query('SELECT * FROM devices WHERE id = $1', [req.params.id]);
         if (result.rows.length > 0) {
             res.json(result.rows[0]);
         } else {
@@ -131,7 +154,7 @@ app.post('/api/devices', async (req, res) => {
     const { name, device_id, board_type, location, status, signal_strength } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO "Device" (name, device_id, board_type, location, status, signal_strength, last_data_time) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING *',
+            'INSERT INTO devices (name, device_id, board_type, location, status, signal_strength, last_data_time) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING *',
             [name, device_id, board_type, location, status, signal_strength]
         );
         res.status(201).json(result.rows[0]);
@@ -145,7 +168,7 @@ app.put('/api/devices/:id', async (req, res) => {
     const { name, device_id, board_type, location, status, signal_strength } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE "Device" SET name = $1, device_id = $2, board_type = $3, location = $4, status = $5, signal_strength = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
+            'UPDATE devices SET name = $1, device_id = $2, board_type = $3, location = $4, status = $5, signal_strength = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
             [name, device_id, board_type, location, status, signal_strength, req.params.id]
         );
         if (result.rows.length > 0) {
@@ -161,7 +184,7 @@ app.put('/api/devices/:id', async (req, res) => {
 // Delete device
 app.delete('/api/devices/:id', async (req, res) => {
     try {
-        const result = await pool.query('DELETE FROM "Device" WHERE id = $1 RETURNING *', [req.params.id]);
+        const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
             res.json({ success: true, message: 'Device deleted' });
         } else {

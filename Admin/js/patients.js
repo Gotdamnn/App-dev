@@ -2,6 +2,99 @@
 
 const API_BASE = 'http://localhost:3001/api';
 let allPatients = [];
+let pendingDeletePatientId = null;
+
+// Show status modal instead of browser alert
+function showStatusModal(title, message, isSuccess = true) {
+    const modal = document.getElementById('statusModal');
+    const titleEl = document.getElementById('statusTitle');
+    const messageEl = document.getElementById('statusMessage');
+    
+    if (modal && titleEl && messageEl) {
+        titleEl.textContent = title;
+        titleEl.style.color = isSuccess ? '#10b981' : '#ef4444';
+        messageEl.textContent = message;
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+    }
+}
+
+// Show confirm modal for delete actions
+function showConfirmModal(title, message, patientId) {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const messageEl = document.getElementById('confirmMessage');
+    
+    if (modal && titleEl && messageEl) {
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        pendingDeletePatientId = patientId;
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+    }
+}
+
+// Close confirm modal
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+    pendingDeletePatientId = null;
+}
+
+// Confirm delete action
+function confirmDelete() {
+    if (pendingDeletePatientId !== null) {
+        deletePatientFromDB(pendingDeletePatientId);
+    }
+    closeConfirmModal();
+}
+
+// Show view patient modal
+function showViewPatientModal(patient) {
+    const modal = document.getElementById('viewPatientModal');
+    if (!modal) return;
+    
+    const lastVisit = patient.last_visit ? new Date(patient.last_visit).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    }) : 'N/A';
+    
+    const temp = patient.body_temperature ? parseFloat(patient.body_temperature).toFixed(1) + '°C' : 'N/A';
+    const statusClass = patient.status === 'active' ? 'active' : 'inactive';
+    
+    document.getElementById('viewPatientName').textContent = patient.name;
+    document.getElementById('viewPatientId').textContent = patient.patient_id || patient.id;
+    document.getElementById('viewPatientEmail').textContent = patient.email || 'N/A';
+    document.getElementById('viewPatientStatus').textContent = patient.status === 'active' ? 'Active' : 'Inactive';
+    document.getElementById('viewPatientStatus').className = 'status-badge ' + statusClass;
+    document.getElementById('viewPatientTemp').textContent = temp;
+    document.getElementById('viewPatientLastVisit').textContent = lastVisit;
+    
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+}
+
+// Close view patient modal
+function closeViewPatientModal() {
+    const modal = document.getElementById('viewPatientModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+}
+
+// Close status modal
+function closeStatusModal() {
+    const modal = document.getElementById('statusModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+}
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
@@ -15,11 +108,11 @@ function setupEventListeners() {
     const statusFilter = document.querySelector('.status-filter') || (document.querySelectorAll('.filter-select').length > 0 ? document.querySelectorAll('.filter-select')[0] : null);
     const tempFilter = document.querySelector('.temp-filter') || (document.querySelectorAll('.filter-select').length > 1 ? document.querySelectorAll('.filter-select')[1] : null);
     const logoutBtn = document.querySelector('.logout-btn');
-    const modal = document.getElementById('editModal') || document.getElementById('editPatientModal');
-    const closeBtn = document.querySelector('.modal-close');
-    const cancelBtn = document.querySelector('.btn-cancel') || document.querySelector('.modal-cancel-btn');
-    const saveBtn = document.querySelector('.btn-save') || document.querySelector('.modal-save-btn');
-    const deleteBtn = document.querySelector('.btn-delete') || document.querySelector('.modal-delete-btn');
+    const addPatientBtn = document.querySelector('.add-patient-btn');
+    const editModal = document.getElementById('editPatientModal');
+    const addModal = document.getElementById('addPatientModal');
+    const addForm = document.getElementById('addPatientForm');
+    const editForm = document.getElementById('editPatientForm');
 
     if (searchInput) {
         searchInput.addEventListener('input', filterPatients);
@@ -37,26 +130,74 @@ function setupEventListeners() {
         logoutBtn.addEventListener('click', handleLogout);
     }
 
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeModal);
+    // Add Patient Button
+    if (addPatientBtn) {
+        addPatientBtn.addEventListener('click', function() {
+            openAddPatientModal();
+        });
     }
 
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', closeModal);
+    // Add Patient Form
+    if (addForm) {
+        addForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await addNewPatient();
+        });
     }
 
-    if (saveBtn) {
-        saveBtn.addEventListener('click', savePatientChanges);
+    // Edit Patient Form
+    if (editForm) {
+        editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await savePatientChanges();
+        });
     }
 
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', deletePatientAction);
+    // Close modals
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modalId = this.getAttribute('data-modal');
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                closeModal(modalId);
+            }
+        });
+    });
+
+    // Cancel buttons
+    document.querySelectorAll('.btn-cancel').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modalId = this.getAttribute('data-modal');
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                closeModal(modalId);
+            }
+        });
+    });
+
+    // Close modals by clicking outside
+    if (addModal) {
+        addModal.addEventListener('click', function(e) {
+            if (e.target === addModal) {
+                closeModal('addPatientModal');
+            }
+        });
     }
 
-    if (modal) {
-        window.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal();
+    if (editModal) {
+        editModal.addEventListener('click', function(e) {
+            if (e.target === editModal) {
+                closeModal('editPatientModal');
+            }
+        });
+    }
+
+    // Status modal click outside to close
+    const statusModal = document.getElementById('statusModal');
+    if (statusModal) {
+        statusModal.addEventListener('click', function(e) {
+            if (e.target === statusModal) {
+                closeStatusModal();
             }
         });
     }
@@ -69,8 +210,11 @@ function setupEventListeners() {
 
         if (viewBtn) {
             const row = viewBtn.closest('tr');
-            const patientName = row.querySelector('.patient-name').textContent;
-            alert('View details for: ' + patientName);
+            const patientId = row.dataset.patientId;
+            const patientData = allPatients.find(p => p.id === parseInt(patientId));
+            if (patientData) {
+                showViewPatientModal(patientData);
+            }
         }
 
         if (editBtn) {
@@ -86,9 +230,7 @@ function setupEventListeners() {
             const row = deleteBtn.closest('tr');
             const patientName = row.querySelector('.patient-name').textContent;
             const patientId = row.dataset.patientId;
-            if (confirm('Are you sure you want to delete ' + patientName + '?')) {
-                deletePatientFromDB(parseInt(patientId));
-            }
+            showConfirmModal('Confirm Delete', 'Are you sure you want to delete ' + patientName + '?', parseInt(patientId));
         }
     });
 }
@@ -115,6 +257,24 @@ function renderPatients(patients) {
 
     tbody.innerHTML = '';
 
+    // Update patient count
+    const patientCountEl = document.getElementById('patientCount');
+    if (patientCountEl) {
+        patientCountEl.textContent = `${patients.length} patient${patients.length !== 1 ? 's' : ''} found`;
+    }
+
+    if (patients.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-users" style="font-size: 48px; margin-bottom: 16px; color: #ccc; display: block;"></i>
+                    No patients found. Click "Add Patient" to add your first patient.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
     patients.forEach(patient => {
         const row = createPatientRow(patient);
         tbody.appendChild(row);
@@ -126,7 +286,7 @@ function createPatientRow(patient) {
     const row = document.createElement('tr');
     row.dataset.patientId = patient.id;
 
-    const tempStatus = patient.body_temperature > 38 ? 'fever' : 'normal';
+    const tempStatus = patient.body_temperature && parseFloat(patient.body_temperature) > 38 ? 'fever' : 'normal';
     const tempClass = tempStatus === 'fever' ? 'fever' : '';
 
     const statusClass = patient.status === 'active' ? 'active' : 'inactive';
@@ -138,9 +298,10 @@ function createPatientRow(patient) {
         day: '2-digit'
     }).replace(/\//g, '/') : 'N/A';
 
-    const tempDisplay = patient.body_temperature ? patient.body_temperature.toFixed(1) + '°C' : 'N/A';
+    const tempDisplay = patient.body_temperature ? parseFloat(patient.body_temperature).toFixed(1) + '°C' : 'N/A';
 
     row.innerHTML = `
+        <td><input type="checkbox" class="row-checkbox"></td>
         <td>
             <div class="patient-cell">
                 <div class="patient-avatar" style="background-color: ${patient.avatar_color || '#2563eb'}">${patient.name.substring(0, 2).toUpperCase()}</div>
@@ -150,7 +311,7 @@ function createPatientRow(patient) {
                 </div>
             </div>
         </td>
-        <td>${patient.patient_id}</td>
+        <td>${patient.patient_id || patient.id}</td>
         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
         <td><span class="temperature ${tempClass}">${tempDisplay}</span></td>
         <td>${lastVisit}</td>
@@ -202,20 +363,22 @@ function filterPatients() {
 
 // Open edit modal
 function openEditModal(patient) {
-    const modal = document.getElementById('editModal') || document.getElementById('editPatientModal');
+    const modal = document.getElementById('editPatientModal');
     if (!modal) return;
 
     modal.dataset.patientId = patient.id;
 
-    const nameInput = modal.querySelector('input[name="name"]') || modal.querySelector('#patientName');
-    const idInput = modal.querySelector('input[name="patient_id"]') || modal.querySelector('#patientId');
-    const statusSelect = modal.querySelector('select[name="status"]') || modal.querySelector('#patientStatus');
-    const tempInput = modal.querySelector('input[name="body_temperature"]') || modal.querySelector('#patientTemp');
-    const visitInput = modal.querySelector('input[name="last_visit"]') || modal.querySelector('#lastVisit');
+    const nameInput = modal.querySelector('#patientName');
+    const idInput = modal.querySelector('#patientId');
+    const emailInput = modal.querySelector('#patientEmail');
+    const statusSelect = modal.querySelector('#patientStatus');
+    const tempInput = modal.querySelector('#patientTemp');
+    const visitInput = modal.querySelector('#lastVisit');
 
     if (nameInput) nameInput.value = patient.name;
     if (idInput) idInput.value = patient.patient_id;
-    if (statusSelect) statusSelect.value = patient.status;
+    if (emailInput) emailInput.value = patient.email || '';
+    if (statusSelect) statusSelect.value = patient.status || 'active';
     if (tempInput) tempInput.value = patient.body_temperature || '';
     if (visitInput) {
         if (patient.last_visit) {
@@ -226,43 +389,50 @@ function openEditModal(patient) {
         }
     }
 
-    if (modal.classList) {
-        modal.classList.add('show');
-    } else {
-        modal.style.display = 'flex';
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+}
+
+// Open add patient modal
+function openAddPatientModal() {
+    const modal = document.getElementById('addPatientModal');
+    if (!modal) return;
+    
+    const form = document.getElementById('addPatientForm');
+    if (form) {
+        form.reset();
     }
+    
+    modal.classList.add('show');
+    modal.style.display = 'flex';
 }
 
 // Close modal
-function closeModal() {
-    const modal = document.getElementById('editModal') || document.getElementById('editPatientModal');
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId || 'editPatientModal');
     if (modal) {
-        if (modal.classList) {
-            modal.classList.remove('show');
-        } else {
-            modal.style.display = 'none';
-        }
+        modal.classList.remove('show');
+        modal.style.display = 'none';
     }
 }
 
 // Save patient changes
 async function savePatientChanges() {
-    const modal = document.getElementById('editModal') || document.getElementById('editPatientModal');
+    const modal = document.getElementById('editPatientModal');
     const patientId = parseInt(modal.dataset.patientId);
     
-    const nameInput = modal.querySelector('input[name="name"]') || modal.querySelector('#patientName');
-    const idInput = modal.querySelector('input[name="patient_id"]') || modal.querySelector('#patientId');
-    const statusSelect = modal.querySelector('select[name="status"]') || modal.querySelector('#patientStatus');
-    const tempInput = modal.querySelector('input[name="body_temperature"]') || modal.querySelector('#patientTemp');
-    const visitInput = modal.querySelector('input[name="last_visit"]') || modal.querySelector('#lastVisit');
+    const nameInput = modal.querySelector('#patientName');
+    const emailInput = modal.querySelector('#patientEmail');
+    const statusSelect = modal.querySelector('#patientStatus');
+    const tempInput = modal.querySelector('#patientTemp');
+    const visitInput = modal.querySelector('#lastVisit');
 
     const updatedData = {
         name: nameInput.value,
-        patient_id: idInput.value,
-        status: statusSelect.value.toLowerCase(),
+        email: emailInput.value || null,
+        status: statusSelect.value,
         body_temperature: tempInput.value ? parseFloat(tempInput.value) : null,
-        last_visit: visitInput.value || null,
-        email: allPatients.find(p => p.id === patientId)?.email || null
+        last_visit: visitInput.value || null
     };
 
     try {
@@ -281,22 +451,69 @@ async function savePatientChanges() {
                 allPatients[index] = updatedPatient;
             }
             filterPatients();
-            closeModal();
-            alert('Patient updated successfully');
+            closeModal('editPatientModal');
+            showStatusModal('Success', 'Patient updated successfully!', true);
+        } else {
+            showStatusModal('Error', 'Error updating patient', false);
         }
     } catch (error) {
         console.error('Error updating patient:', error);
-        alert('Error updating patient');
+        showStatusModal('Error', 'Error updating patient: ' + error.message, false);
+    }
+}
+
+// Add new patient
+async function addNewPatient() {
+    const modal = document.getElementById('addPatientModal');
+    const form = document.getElementById('addPatientForm');
+    
+    const nameInput = form.querySelector('#addPatientName');
+    const emailInput = form.querySelector('#addPatientEmail');
+    const statusSelect = form.querySelector('#addPatientStatus');
+    const tempInput = form.querySelector('#addPatientTemp');
+    const visitInput = form.querySelector('#addLastVisit');
+
+    const newPatientData = {
+        name: nameInput.value,
+        email: emailInput.value,
+        status: statusSelect.value,
+        body_temperature: parseFloat(tempInput.value),
+        last_visit: visitInput.value
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/patients`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newPatientData)
+        });
+
+        if (response.ok) {
+            const newPatient = await response.json();
+            allPatients.push(newPatient);
+            filterPatients();
+            closeModal('addPatientModal');
+            showStatusModal('Success', 'Patient added successfully! Patient ID: ' + newPatient.patient_id, true);
+        } else {
+            const error = await response.json();
+            showStatusModal('Error', 'Error adding patient: ' + (error.error || 'Unknown error'), false);
+        }
+    } catch (error) {
+        console.error('Error adding patient:', error);
+        showStatusModal('Error', 'Error adding patient: ' + error.message, false);
     }
 }
 
 // Delete patient action
 function deletePatientAction() {
-    const modal = document.getElementById('editModal') || document.getElementById('editPatientModal');
+    const modal = document.getElementById('editPatientModal');
     const patientId = parseInt(modal.dataset.patientId);
-    if (confirm('Are you sure you want to delete this patient?')) {
-        deletePatientFromDB(patientId);
-    }
+    const patient = allPatients.find(p => p.id === patientId);
+    const patientName = patient ? patient.name : 'this patient';
+    closeModal('editPatientModal');
+    showConfirmModal('Confirm Delete', 'Are you sure you want to delete ' + patientName + '?', patientId);
 }
 
 // Delete patient from database
@@ -309,20 +526,41 @@ async function deletePatientFromDB(patientId) {
         if (response.ok) {
             allPatients = allPatients.filter(p => p.id !== patientId);
             filterPatients();
-            closeModal();
-            alert('Patient deleted successfully');
+            closeModal('editPatientModal');
+            showStatusModal('Success', 'Patient deleted successfully!', true);
         }
     } catch (error) {
         console.error('Error deleting patient:', error);
-        alert('Error deleting patient');
+        showStatusModal('Error', 'Error deleting patient', false);
     }
 }
 
 // Logout functionality
 function handleLogout() {
-    if (confirm('Are you sure you want to log out?')) {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = 'login.html';
+    showLogoutModal();
+}
+
+// Show logout confirmation modal
+function showLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.classList.add('show');
+        modal.style.display = 'flex';
     }
+}
+
+// Close logout modal
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+}
+
+// Confirm logout
+function confirmLogout() {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = 'login.html';
 }

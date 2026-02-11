@@ -397,6 +397,9 @@ body {
 .activity-list .dot-orange {
     background: #f59e42;
 }
+.activity-list .dot-red {
+    background: #ef4444;
+}
 .activity-list .dot-purple {
     background: #a855f7;
 }

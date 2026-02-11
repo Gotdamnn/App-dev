@@ -16,10 +16,10 @@
         </div>
         <nav>
            <ul>
-                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="dashboard.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
                 <li><a href="patient.html"><i class="fas fa-users"></i> Patients</a></li>
                 <li><a href="devices.html"><i class="fas fa-laptop"></i> Devices</a></li>
-                <li><a href="alerts.html" class="active"><i class="fas fa-bell"></i> Alerts</a></li>
+                <li><a href="alerts.html"><i class="fas fa-bell"></i> Alerts</a></li>
                 <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
             </ul>
@@ -53,30 +53,30 @@
             <div class="stats-card patients">
                 <div class="icon">👤</div>
                 <div class="stat-title">Total Patients</div>
-                <div class="stat-value">2,847</div>
-                <div class="stat-desc">Active in last 30 days</div>
-                <div class="stat-change">+12%</div>
+                <div class="stat-value" id="totalPatients">--</div>
+                <div class="stat-desc">Registered in database</div>
+                <div class="stat-change" id="activePatients">0 active</div>
             </div>
             <div class="stats-card devices">
                 <div class="icon">💻</div>
                 <div class="stat-title">Connected Devices</div>
-                <div class="stat-value">1,234</div>
+                <div class="stat-value" id="onlineDevices">--</div>
                 <div class="stat-desc">Online and monitoring</div>
-                <div class="stat-change">+8%</div>
+                <div class="stat-change" id="totalDevices">0 total</div>
             </div>
             <div class="stats-card alerts">
                 <div class="icon">⚠️</div>
-                <div class="stat-title">Active Alerts</div>
-                <div class="stat-value">23</div>
-                <div class="stat-desc">Requiring attention</div>
-                <div class="stat-change">-5%</div>
+                <div class="stat-title">Offline Devices</div>
+                <div class="stat-value" id="offlineDevices">--</div>
+                <div class="stat-desc">Requires attention</div>
+                <div class="stat-change" id="warningDevices">0 warning</div>
             </div>
             <div class="stats-card uptime">
                 <div class="icon">⚡</div>
-                <div class="stat-title">System Uptime</div>
-                <div class="stat-value">99.8%</div>
-                <div class="stat-desc">Last 30 days average</div>
-                <div class="stat-change">+15%</div>
+                <div class="stat-title">System Status</div>
+                <div class="stat-value" id="systemStatus">Online</div>
+                <div class="stat-desc">Server running</div>
+                <div class="stat-change" id="lastUpdated">Just now</div>
             </div>
         </div>
 
@@ -84,59 +84,37 @@
             <div class="quick-actions">
                 <div class="quick-actions-header">
                     <h2>Quick Actions</h2>
-                    <a href="#">View All</a>
                 </div>
                 <div class="quick-actions-list">
-                    <div class="quick-action">
+                    <a href="patient.html" class="quick-action" style="text-decoration: none; color: inherit;">
                         <div class="icon">👤</div>
                         <div class="action-title">Manage Patients</div>
                         <div class="action-desc">View and manage patient records</div>
-                    </div>
-                    <div class="quick-action">
+                    </a>
+                    <a href="devices.html" class="quick-action" style="text-decoration: none; color: inherit;">
                         <div class="icon">💻</div>
                         <div class="action-title">Device Status</div>
                         <div class="action-desc">Monitor connected devices</div>
-                    </div>
-                    <div class="quick-action">
+                    </a>
+                    <a href="alerts.html" class="quick-action" style="text-decoration: none; color: inherit;">
                         <div class="icon">⚠️</div>
                         <div class="action-title">View Alerts</div>
                         <div class="action-desc">Check system alerts</div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
             <div class="recent-activity">
                 <div class="recent-activity-header">
                     <h2>Recent Activity</h2>
-                    <a href="#">View All</a>
                 </div>
-                <ul class="activity-list">
-                    <li>
-                        <span class="activity-dot dot-green"></span>
-                        <div class="activity-details">
-                            <div class="activity-title">New patient registered</div>
-                            <div class="activity-meta">Sarah Johnson - ID: PT-2847 · 2 minutes ago</div>
-                        </div>
-                    </li>
-                    <li>
+                <ul class="activity-list" id="activityList">
+                    <!-- Activity will be loaded dynamically from database -->
+                    <li class="loading-activity">
                         <span class="activity-dot dot-blue"></span>
                         <div class="activity-details">
-                            <div class="activity-title">Device connected</div>
-                            <div class="activity-meta">Heart Monitor - Room 204 · 5 minutes ago</div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="activity-dot dot-orange"></span>
-                        <div class="activity-details">
-                            <div class="activity-title">Alert triggered</div>
-                            <div class="activity-meta">High blood pressure - John Doe · 8 minutes ago</div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="activity-dot dot-purple"></span>
-                        <div class="activity-details">
-                            <div class="activity-title">System backup completed</div>
-                            <div class="activity-meta">Daily backup successful · 15 minutes ago</div>
+                            <div class="activity-title">Loading...</div>
+                            <div class="activity-meta">Fetching recent activity</div>
                         </div>
                     </li>
                 </ul>
@@ -145,5 +123,40 @@
     </div>
 
     <script src="../js/dashboard.js"></script>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Logout</h2>
+                <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button type="button" class="btn-delete" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; }
+        .modal-header h2 { margin: 0; font-size: 18px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+        .modal-body { padding: 30px; text-align: center; }
+        .status-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
+        .status-icon.warning { background: #fef3c7; color: #f59e0b; }
+        .form-actions { display: flex; gap: 12px; padding: 20px; border-top: 1px solid #eee; justify-content: flex-end; }
+        .btn-cancel { padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; }
+        .btn-delete { padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    </style>
 </body>
 </html>

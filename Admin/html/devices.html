@@ -75,133 +75,19 @@
         </div>
 
         <div class="devices-container">
-            <div class="devices-section">
-                <h2>Active Arduino Devices</h2>
-                <div class="devices-grid">
-                    <div class="device-card online">
-                        <div class="device-header">
-                            <div class="device-status-indicator"></div>
-                            <div class="device-actions">
-                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
-                            </div>
-                        </div>
-                        <div class="device-icon">
-                            <i class="fas fa-qrcode"></i>
-                        </div>
-                        <div class="device-info">
-                            <div class="device-name">RFID Scanner</div>
-                            <div class="device-id">ARD-001</div>
-                            <div class="device-location">Entrance</div>
-                        </div>
-                        <div class="device-stats-row">
-                            <div class="device-stat">
-                                <div class="stat-label">Board Type</div>
-                                <div class="stat-value">Arduino Uno</div>
-                            </div>
-                            <div class="device-stat">
-                                <div class="stat-label">Signal</div>
-                                <div class="stat-value">95%</div>
-                            </div>
-                        </div>
-                        <div class="device-footer">
-                            <span class="last-sync">Last data: 2 mins ago</span>
-                        </div>
-                    </div>
-
-                    <div class="device-card online">
-                        <div class="device-header">
-                            <div class="device-status-indicator"></div>
-                            <div class="device-actions">
-                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
-                            </div>
-                        </div>
-                        <div class="device-icon">
-                            <i class="fas fa-barcode"></i>
-                        </div>
-                        <div class="device-info">
-                            <div class="device-name">Barcode Scanner</div>
-                            <div class="device-id">ARD-002</div>
-                            <div class="device-location">Warehouse</div>
-                        </div>
-                        <div class="device-stats-row">
-                            <div class="device-stat">
-                                <div class="stat-label">Board Type</div>
-                                <div class="stat-value">Arduino Mega</div>
-                            </div>
-                            <div class="device-stat">
-                                <div class="stat-label">Signal</div>
-                                <div class="stat-value">92%</div>
-                            </div>
-                        </div>
-                        <div class="device-footer">
-                            <span class="last-sync">Last data: 1 min ago</span>
-                        </div>
-                    </div>
-
-                    <div class="device-card online">
-                        <div class="device-header">
-                            <div class="device-status-indicator"></div>
-                            <div class="device-actions">
-                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
-                            </div>
-                        </div>
-                        <div class="device-icon">
-                            <i class="fas fa-wifi"></i>
-                        </div>
-                        <div class="device-info">
-                            <div class="device-name">WiFi Sensor Hub</div>
-                            <div class="device-id">ARD-003</div>
-                            <div class="device-location">Main Office</div>
-                        </div>
-                        <div class="device-stats-row">
-                            <div class="device-stat">
-                                <div class="stat-label">Board Type</div>
-                                <div class="stat-value">Arduino MKR WiFi</div>
-                            </div>
-                            <div class="device-stat">
-                                <div class="stat-label">Signal</div>
-                                <div class="stat-value">98%</div>
-                            </div>
-                        </div>
-                        <div class="device-footer">
-                            <span class="last-sync">Last data: 30 secs ago</span>
-                        </div>
-                    </div>
+            <!-- Online Devices Section -->
+            <div class="devices-section online-section">
+                <h2><i class="fas fa-check-circle" style="color: #22c55e; margin-right: 8px;"></i>Online Devices</h2>
+                <div class="devices-grid" id="onlineDevicesGrid">
+                    <!-- Online device cards will be loaded dynamically from database -->
                 </div>
             </div>
 
-            <div class="devices-section">
-                <h2>Offline Arduino Devices</h2>
-                <div class="devices-grid">
-                    <div class="device-card offline">
-                        <div class="device-header">
-                            <div class="device-status-indicator"></div>
-                            <div class="device-actions">
-                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
-                            </div>
-                        </div>
-                        <div class="device-icon">
-                            <i class="fas fa-thermometer-half"></i>
-                        </div>
-                        <div class="device-info">
-                            <div class="device-name">Temperature Sensor</div>
-                            <div class="device-id">ARD-004</div>
-                            <div class="device-location">Lab Room</div>
-                        </div>
-                        <div class="device-stats-row">
-                            <div class="device-stat">
-                                <div class="stat-label">Board Type</div>
-                                <div class="stat-value">Arduino Nano</div>
-                            </div>
-                            <div class="device-stat">
-                                <div class="stat-label">Battery</div>
-                                <div class="stat-value">15%</div>
-                            </div>
-                        </div>
-                        <div class="device-footer">
-                            <span class="last-sync">Last data: 2 hours ago</span>
-                        </div>
-                    </div>
+            <!-- Offline Devices Section -->
+            <div class="devices-section offline-section">
+                <h2><i class="fas fa-exclamation-circle" style="color: #ef4444; margin-right: 8px;"></i>Offline Devices</h2>
+                <div class="devices-grid" id="offlineDevicesGrid">
+                    <!-- Offline device cards will be loaded dynamically from database -->
                 </div>
             </div>
         </div>
@@ -215,9 +101,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Edit Device</h2>
-                <button class="modal-close">&times;</button>
+                <button class="modal-close" data-modal="editDeviceModal">&times;</button>
             </div>
             <form id="editDeviceForm">
+                <input type="hidden" id="editDbId" name="dbId">
                 <div class="form-group">
                     <label for="deviceName">Device Name</label>
                     <input type="text" id="deviceName" name="deviceName" required>
@@ -236,13 +123,19 @@
                         <option value="Arduino Mega">Arduino Mega</option>
                         <option value="Arduino Nano">Arduino Nano</option>
                         <option value="Arduino MKR WiFi">Arduino MKR WiFi</option>
-                        <option value="Arduino Leonardo">Arduino Leonardo</option>
+                        <option value="NodeMCU">NodeMCU</option>
+                        <option value="ESP32">ESP32</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="deviceLocation">Location</label>
                     <input type="text" id="deviceLocation" name="deviceLocation" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signalStrength">Signal Strength (%)</label>
+                    <input type="number" id="signalStrength" name="signalStrength" min="0" max="100" value="100">
                 </div>
 
                 <div class="form-group">
@@ -255,13 +148,175 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn-delete">Delete Device</button>
+                    <button type="button" class="btn-delete" onclick="showDeleteConfirmModal()">Delete Device</button>
                     <div>
-                        <button type="button" class="btn-cancel">Cancel</button>
+                        <button type="button" class="btn-cancel" data-modal="editDeviceModal">Cancel</button>
                         <button type="submit" class="btn-save">Save Changes</button>
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div id="addDeviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Device</h2>
+                <button class="modal-close" data-modal="addDeviceModal">&times;</button>
+            </div>
+            <form id="addDeviceForm">
+                <div class="form-group">
+                    <label for="addDeviceName">Device Name *</label>
+                    <input type="text" id="addDeviceName" name="deviceName" placeholder="e.g., RFID Scanner" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addDeviceId">Device ID *</label>
+                    <input type="text" id="addDeviceId" name="deviceId" placeholder="e.g., ARD-001" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addDeviceLocation">Location *</label>
+                    <input type="text" id="addDeviceLocation" name="deviceLocation" placeholder="e.g., Entrance" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addBoardType">Board Type *</label>
+                    <select id="addBoardType" name="boardType" required>
+                        <option value="">Select Board Type</option>
+                        <option value="Arduino Uno">Arduino Uno</option>
+                        <option value="Arduino Mega">Arduino Mega</option>
+                        <option value="Arduino Nano">Arduino Nano</option>
+                        <option value="NodeMCU">NodeMCU</option>
+                        <option value="ESP32">ESP32</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="addSignalStrength">Signal Strength (%) *</label>
+                    <input type="number" id="addSignalStrength" name="signalStrength" min="0" max="100" value="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addDeviceStatus">Status *</label>
+                    <select id="addDeviceStatus" name="deviceStatus" required>
+                        <option value="">Select Status</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="warning">Warning</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" data-modal="addDeviceModal">Cancel</button>
+                    <button type="submit" class="btn-save">Add Device</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Status Modal (success/error) -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content status-modal">
+            <div class="modal-header">
+                <h2 id="statusModalTitle">Success</h2>
+                <button class="modal-close" onclick="closeStatusModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="statusModalIcon" class="status-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <p id="statusModalMessage">Operation completed successfully!</p>
+            </div>
+            <div class="form-actions" style="justify-content: center;">
+                <button type="button" class="btn-save" onclick="closeStatusModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p id="confirmModalMessage">Are you sure you want to delete this device?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" class="btn-delete" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Device Modal -->
+    <div id="viewDeviceModal" class="modal">
+        <div class="modal-content view-modal">
+            <div class="modal-header">
+                <h2>Device Details</h2>
+                <button class="modal-close" onclick="closeViewDeviceModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="device-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Device Name:</span>
+                        <span id="viewDeviceName" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Device ID:</span>
+                        <span id="viewDeviceId" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Board Type:</span>
+                        <span id="viewBoardType" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Location:</span>
+                        <span id="viewDeviceLocation" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span id="viewDeviceStatus" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Signal Strength:</span>
+                        <span id="viewSignalStrength" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Data Time:</span>
+                        <span id="viewLastDataTime" class="detail-value">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions" style="justify-content: center;">
+                <button type="button" class="btn-save" onclick="closeViewDeviceModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Logout</h2>
+                <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button type="button" class="btn-delete" onclick="confirmLogout()">Logout</button>
+            </div>
         </div>
     </div>
 </body>

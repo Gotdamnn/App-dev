@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS admins (
 
 CREATE TABLE IF NOT EXISTS patients (
     id SERIAL PRIMARY KEY,
+    patient_id SERIAL UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
-    patient_id VARCHAR(50) UNIQUE NOT NULL,
     status VARCHAR(50) CHECK (status IN ('active', 'inactive')) DEFAULT 'active',
     body_temperature DECIMAL(5, 2),
     last_visit DATE,

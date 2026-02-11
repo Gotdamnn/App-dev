@@ -538,3 +538,124 @@
         width: 100%;
     }
 }
+
+/* Device Menu Dropdown */
+.device-actions {
+    position: relative;
+}
+
+.device-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    min-width: 140px;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.device-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.device-menu button:hover {
+    background: #f3f4f6;
+}
+
+.device-menu button i {
+    width: 16px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.device-menu .btn-delete-device:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.device-menu .btn-delete-device:hover i {
+    color: #dc2626;
+}
+
+/* Status Modal Styles */
+.status-modal,
+.confirm-modal,
+.view-modal {
+    max-width: 400px;
+}
+
+.status-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 32px;
+}
+
+.status-icon.success {
+    background: #dcfce7;
+    color: #22c55e;
+}
+
+.status-icon.error {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.status-icon.warning {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.modal-body {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.modal-body p {
+    color: #4b5563;
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* View Modal Details */
+.device-details {
+    text-align: left;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #1f2937;
+    font-weight: 600;
+}
+
