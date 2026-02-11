@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Management - PatientPulse</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/patients.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">P</div>
+            PatientPulse
+        </div>
+        <nav>
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="patient.html" class="active"><i class="fas fa-users"></i> Patients</a></li>
+                <li><a href="../html/devices.html"><i class="fas fa-laptop"></i> Devices</a></li>
+                <li><a href="#"><i class="fas fa-bell"></i> Alerts</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+        </nav>
+        <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <div class="user">
+            <div class="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name">Admin User</div>
+                <div class="user-email">admin@patientpulse.com</div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Patient Management</h1>
+                <div class="patient-count">8 patients found</div>
+            </div>
+            <button class="add-patient-btn"><i class="fas fa-plus"></i> Add Patient</button>
+        </div>
+
+        <div class="patient-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search patients by name, ID, or condition...">
+            </div>
+            <div class="filters">
+                <select class="filter-select">
+                    <option>All Status</option>
+                    <option>Active</option>
+                    <option>Inactive</option>
+                </select>
+                <select class="filter-select">
+                    <option>All Temperature</option>
+                    <option>Normal (36-37°C)</option>
+                    <option>Fever (>38°C)</option>
+                    <option>Low (<36°C)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>Patient</th>
+                        <th>Patient ID</th>
+                        <th>Status</th>
+                        <th>Body Temperature</th>
+                        <th>Last Visit</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">SJ</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">Sarah Johnson</div>
+                                    <div class="patient-email">sarah.j@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2847</strong></td>
+                        <td><span class="status-badge active">Active</span></td>
+                        <td><span class="temperature">36.8°C</span></td>
+                        <td>12/20/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">MC</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">Michael Chen</div>
+                                    <div class="patient-email">m.chen@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2846</strong></td>
+                        <td><span class="status-badge inactive">Inactive</span></td>
+                        <td><span class="temperature">37.2°C</span></td>
+                        <td>12/18/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">ER</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">Emily Rodriguez</div>
+                                    <div class="patient-email">emily.r@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2845</strong></td>
+                        <td><span class="status-badge active">Active</span></td>
+                        <td><span class="temperature">36.5°C</span></td>
+                        <td>12/21/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">RW</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">Robert Wilson</div>
+                                    <div class="patient-email">r.wilson@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2844</strong></td>
+                        <td><span class="status-badge inactive">Inactive</span></td>
+                        <td><span class="temperature fever">38.9°C</span></td>
+                        <td>12/19/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">LT</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">Lisa Thompson</div>
+                                    <div class="patient-email">lisa.t@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2843</strong></td>
+                        <td><span class="status-badge active">Active</span></td>
+                        <td><span class="temperature">36.9°C</span></td>
+                        <td>12/20/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">DM</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">David Martinez</div>
+                                    <div class="patient-email">d.martinez@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2842</strong></td>
+                        <td><span class="status-badge inactive">Inactive</span></td>
+                        <td><span class="temperature">35.8°C</span></td>
+                        <td>12/17/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">JL</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">Jennifer Lee</div>
+                                    <div class="patient-email">jennifer.l@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2841</strong></td>
+                        <td><span class="status-badge active">Active</span></td>
+                        <td><span class="temperature">37.1°C</span></td>
+                        <td>12/20/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>
+                            <div class="patient-cell">
+                                <div class="patient-avatar">JB</div>
+                                <div class="patient-info">
+                                    <div class="patient-name">James Brown</div>
+                                    <div class="patient-email">j.brown@email.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong>PT-2840</strong></td>
+                        <td><span class="status-badge inactive">Inactive</span></td>
+                        <td><span class="temperature fever">39.2°C</span></td>
+                        <td>12/16/2025</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+    <script src="../js/patients.js"></script>
+
+    <!-- Edit Patient Modal -->
+    <div id="editPatientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Patient</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="editPatientForm">
+                <div class="form-group">
+                    <label for="patientName">Patient Name</label>
+                    <input type="text" id="patientName" name="patientName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="patientId">Patient ID</label>
+                    <input type="text" id="patientId" name="patientId" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="patientStatus">Status</label>
+                    <select id="patientStatus" name="patientStatus" required>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="patientTemp">Body Temperature (°C)</label>
+                    <input type="number" id="patientTemp" name="patientTemp" step="0.1" min="30" max="45" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lastVisit">Last Visit</label>
+                    <input type="date" id="lastVisit" name="lastVisit" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

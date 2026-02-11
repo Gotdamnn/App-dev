@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert Management - PatientPulse</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/alerts.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">P</div>
+            PatientPulse
+        </div>
+        <nav>
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="patient.html"><i class="fas fa-users"></i> Patients</a></li>
+                <li><a href="devices.html"><i class="fas fa-laptop"></i> Devices</a></li>
+                <li><a href="alerts.html" class="active"><i class="fas fa-bell"></i> Alerts</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+        </nav>
+        <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <div class="user">
+            <div class="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name">Admin User</div>
+                <div class="user-email">admin@patientpulse.com</div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Alert Management</h1>
+                <div class="page-subtitle">Monitor and manage patient vital sign alerts and warnings</div>
+            </div>
+        </div>
+
+        <div class="alert-stats">
+            <div class="alert-stat-card active-alerts">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">Active Alerts</div>
+                </div>
+            </div>
+
+            <div class="alert-stat-card critical-alerts">
+                <div class="stat-icon">
+                    <i class="fas fa-skull-crossbones"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Critical Alerts</div>
+                </div>
+            </div>
+
+            <div class="alert-stat-card resolved-alerts">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Resolved Today</div>
+                </div>
+            </div>
+
+            <div class="alert-stat-card medium-alerts">
+                <div class="stat-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">Medium Priority</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alerts-controls">
+            <div class="control-group">
+                <label>Filter by Status:</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">All Alerts</option>
+                    <option value="active">Active</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="critical">Critical</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Sort by:</label>
+                <select id="sortBy" class="filter-select">
+                    <option value="timestamp">Timestamp</option>
+                    <option value="severity">Severity</option>
+                    <option value="patient">Patient Name</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="alerts-container">
+            <table class="alerts-table">
+                <thead>
+                    <tr>
+                        <th>Patient & Alert</th>
+                        <th>Timestamp</th>
+                        <th>Values</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+    <script src="../js/alerts.js"></script>
+</body>
+</html>

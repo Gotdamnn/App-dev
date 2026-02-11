@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Monitoring - PatientPulse</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/devices.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">P</div>
+            PatientPulse
+        </div>
+        <nav>
+           <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="patient.html"><i class="fas fa-users"></i> Patients</a></li>
+                <li><a href="devices.html" class="active"><i class="fas fa-laptop"></i> Devices</a></li>
+                <li><a href="alerts.html"><i class="fas fa-bell"></i> Alerts</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+        </nav>
+        <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <div class="user">
+            <div class="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name">Admin User</div>
+                <div class="user-email">admin@patientpulse.com</div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Arduino Scanner Devices</h1>
+            </div>
+            <div class="header-actions">
+                <div class="status-dots">
+                    <span class="dot online"></span>
+                    <span class="dot warning"></span>
+                    <span class="dot offline"></span>
+                </div>
+                <button class="add-device-btn"><i class="fas fa-plus"></i> Add Device</button>
+            </div>
+        </div>
+
+        <div class="device-stats">
+            <div class="device-stat-card online">
+                <div class="stat-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Connected Devices</div>
+                    <div class="stat-subtitle">Arduino boards online</div>
+                </div>
+                <div class="stat-badge">+3</div>
+            </div>
+
+            <div class="device-stat-card offline">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Disconnected Devices</div>
+                    <div class="stat-subtitle">Requires attention</div>
+                </div>
+                <div class="stat-badge">-1</div>
+            </div>
+        </div>
+
+        <div class="devices-container">
+            <div class="devices-section">
+                <h2>Active Arduino Devices</h2>
+                <div class="devices-grid">
+                    <div class="device-card online">
+                        <div class="device-header">
+                            <div class="device-status-indicator"></div>
+                            <div class="device-actions">
+                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
+                            </div>
+                        </div>
+                        <div class="device-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <div class="device-info">
+                            <div class="device-name">RFID Scanner</div>
+                            <div class="device-id">ARD-001</div>
+                            <div class="device-location">Entrance</div>
+                        </div>
+                        <div class="device-stats-row">
+                            <div class="device-stat">
+                                <div class="stat-label">Board Type</div>
+                                <div class="stat-value">Arduino Uno</div>
+                            </div>
+                            <div class="device-stat">
+                                <div class="stat-label">Signal</div>
+                                <div class="stat-value">95%</div>
+                            </div>
+                        </div>
+                        <div class="device-footer">
+                            <span class="last-sync">Last data: 2 mins ago</span>
+                        </div>
+                    </div>
+
+                    <div class="device-card online">
+                        <div class="device-header">
+                            <div class="device-status-indicator"></div>
+                            <div class="device-actions">
+                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
+                            </div>
+                        </div>
+                        <div class="device-icon">
+                            <i class="fas fa-barcode"></i>
+                        </div>
+                        <div class="device-info">
+                            <div class="device-name">Barcode Scanner</div>
+                            <div class="device-id">ARD-002</div>
+                            <div class="device-location">Warehouse</div>
+                        </div>
+                        <div class="device-stats-row">
+                            <div class="device-stat">
+                                <div class="stat-label">Board Type</div>
+                                <div class="stat-value">Arduino Mega</div>
+                            </div>
+                            <div class="device-stat">
+                                <div class="stat-label">Signal</div>
+                                <div class="stat-value">92%</div>
+                            </div>
+                        </div>
+                        <div class="device-footer">
+                            <span class="last-sync">Last data: 1 min ago</span>
+                        </div>
+                    </div>
+
+                    <div class="device-card online">
+                        <div class="device-header">
+                            <div class="device-status-indicator"></div>
+                            <div class="device-actions">
+                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
+                            </div>
+                        </div>
+                        <div class="device-icon">
+                            <i class="fas fa-wifi"></i>
+                        </div>
+                        <div class="device-info">
+                            <div class="device-name">WiFi Sensor Hub</div>
+                            <div class="device-id">ARD-003</div>
+                            <div class="device-location">Main Office</div>
+                        </div>
+                        <div class="device-stats-row">
+                            <div class="device-stat">
+                                <div class="stat-label">Board Type</div>
+                                <div class="stat-value">Arduino MKR WiFi</div>
+                            </div>
+                            <div class="device-stat">
+                                <div class="stat-label">Signal</div>
+                                <div class="stat-value">98%</div>
+                            </div>
+                        </div>
+                        <div class="device-footer">
+                            <span class="last-sync">Last data: 30 secs ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="devices-section">
+                <h2>Offline Arduino Devices</h2>
+                <div class="devices-grid">
+                    <div class="device-card offline">
+                        <div class="device-header">
+                            <div class="device-status-indicator"></div>
+                            <div class="device-actions">
+                                <button class="device-action-btn" title="More"><i class="fas fa-ellipsis-v"></i></button>
+                            </div>
+                        </div>
+                        <div class="device-icon">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        <div class="device-info">
+                            <div class="device-name">Temperature Sensor</div>
+                            <div class="device-id">ARD-004</div>
+                            <div class="device-location">Lab Room</div>
+                        </div>
+                        <div class="device-stats-row">
+                            <div class="device-stat">
+                                <div class="stat-label">Board Type</div>
+                                <div class="stat-value">Arduino Nano</div>
+                            </div>
+                            <div class="device-stat">
+                                <div class="stat-label">Battery</div>
+                                <div class="stat-value">15%</div>
+                            </div>
+                        </div>
+                        <div class="device-footer">
+                            <span class="last-sync">Last data: 2 hours ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+    <script src="../js/devices.js"></script>
+
+    <!-- Edit Device Modal -->
+    <div id="editDeviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Device</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="editDeviceForm">
+                <div class="form-group">
+                    <label for="deviceName">Device Name</label>
+                    <input type="text" id="deviceName" name="deviceName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceId">Device ID</label>
+                    <input type="text" id="deviceId" name="deviceId" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="boardType">Board Type</label>
+                    <select id="boardType" name="boardType" required>
+                        <option value="">Select Board Type</option>
+                        <option value="Arduino Uno">Arduino Uno</option>
+                        <option value="Arduino Mega">Arduino Mega</option>
+                        <option value="Arduino Nano">Arduino Nano</option>
+                        <option value="Arduino MKR WiFi">Arduino MKR WiFi</option>
+                        <option value="Arduino Leonardo">Arduino Leonardo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceLocation">Location</label>
+                    <input type="text" id="deviceLocation" name="deviceLocation" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceStatus">Status</label>
+                    <select id="deviceStatus" name="deviceStatus" required>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="warning">Warning</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-delete">Delete Device</button>
+                    <div>
+                        <button type="button" class="btn-cancel">Cancel</button>
+                        <button type="submit" class="btn-save">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

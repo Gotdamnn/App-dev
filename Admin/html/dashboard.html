@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatientPulse Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">P</div>
+            PatientPulse
+        </div>
+        <nav>
+           <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="patient.html"><i class="fas fa-users"></i> Patients</a></li>
+                <li><a href="devices.html"><i class="fas fa-laptop"></i> Devices</a></li>
+                <li><a href="alerts.html" class="active"><i class="fas fa-bell"></i> Alerts</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+        </nav>
+        <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <div class="user">
+            <div class="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name">Admin User</div>
+                <div class="user-email">admin@patientpulse.com</div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="dashboard-header">
+            <div>
+                <h1>Dashboard Overview</h1>
+                <div class="last-updated">Last updated: 8:56:29 PM</div>
+            </div>
+            <div class="refresh">
+                <button>🔄 Refresh</button>
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-cards">
+            <div class="stats-card patients">
+                <div class="icon">👤</div>
+                <div class="stat-title">Total Patients</div>
+                <div class="stat-value">2,847</div>
+                <div class="stat-desc">Active in last 30 days</div>
+                <div class="stat-change">+12%</div>
+            </div>
+            <div class="stats-card devices">
+                <div class="icon">💻</div>
+                <div class="stat-title">Connected Devices</div>
+                <div class="stat-value">1,234</div>
+                <div class="stat-desc">Online and monitoring</div>
+                <div class="stat-change">+8%</div>
+            </div>
+            <div class="stats-card alerts">
+                <div class="icon">⚠️</div>
+                <div class="stat-title">Active Alerts</div>
+                <div class="stat-value">23</div>
+                <div class="stat-desc">Requiring attention</div>
+                <div class="stat-change">-5%</div>
+            </div>
+            <div class="stats-card uptime">
+                <div class="icon">⚡</div>
+                <div class="stat-title">System Uptime</div>
+                <div class="stat-value">99.8%</div>
+                <div class="stat-desc">Last 30 days average</div>
+                <div class="stat-change">+15%</div>
+            </div>
+        </div>
+
+        <div class="actions-activity-container">
+            <div class="quick-actions">
+                <div class="quick-actions-header">
+                    <h2>Quick Actions</h2>
+                    <a href="#">View All</a>
+                </div>
+                <div class="quick-actions-list">
+                    <div class="quick-action">
+                        <div class="icon">👤</div>
+                        <div class="action-title">Manage Patients</div>
+                        <div class="action-desc">View and manage patient records</div>
+                    </div>
+                    <div class="quick-action">
+                        <div class="icon">💻</div>
+                        <div class="action-title">Device Status</div>
+                        <div class="action-desc">Monitor connected devices</div>
+                    </div>
+                    <div class="quick-action">
+                        <div class="icon">⚠️</div>
+                        <div class="action-title">View Alerts</div>
+                        <div class="action-desc">Check system alerts</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recent-activity">
+                <div class="recent-activity-header">
+                    <h2>Recent Activity</h2>
+                    <a href="#">View All</a>
+                </div>
+                <ul class="activity-list">
+                    <li>
+                        <span class="activity-dot dot-green"></span>
+                        <div class="activity-details">
+                            <div class="activity-title">New patient registered</div>
+                            <div class="activity-meta">Sarah Johnson - ID: PT-2847 · 2 minutes ago</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="activity-dot dot-blue"></span>
+                        <div class="activity-details">
+                            <div class="activity-title">Device connected</div>
+                            <div class="activity-meta">Heart Monitor - Room 204 · 5 minutes ago</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="activity-dot dot-orange"></span>
+                        <div class="activity-details">
+                            <div class="activity-title">Alert triggered</div>
+                            <div class="activity-meta">High blood pressure - John Doe · 8 minutes ago</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="activity-dot dot-purple"></span>
+                        <div class="activity-details">
+                            <div class="activity-title">System backup completed</div>
+                            <div class="activity-meta">Daily backup successful · 15 minutes ago</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
