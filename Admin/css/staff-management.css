@@ -535,6 +535,26 @@
     gap: 12px;
 }
 
+/* Permission Counter */
+.permission-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    margin: 0 16px;
+}
+
+.permission-counter #permissionCount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
 /* Button Styles */
 .btn-cancel,
 .btn-submit,

@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcrypt');
+const { runMigrations } = require('./init-db');
 
 const app = express();
 app.use(express.json());
@@ -32,6 +33,9 @@ const testConnection = async () => {
         const result = await pool.query('SELECT NOW()');
         console.log('✅ DATABASE CONNECTED SUCCESSFULLY');
         console.log('   Server time:', result.rows[0]);
+        
+        // Run database migrations after successful connection
+        await runMigrations();
     } catch (err) {
         console.error('❌ DATABASE CONNECTION FAILED');
         console.error('   Error:', err.message);
@@ -2017,8 +2021,102 @@ async function initializeSampleData() {
     }
 }
 
-// Seed data after a short delay to ensure DB is connected
-setTimeout(initializeSampleData, 2000);
+// ===== NOTIFICATIONS API =====
+// Get all notifications
+app.get('/api/notifications', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50'
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get new notifications (since last check)
+app.get('/api/notifications/new', async (req, res) => {
+    try {
+        const sincestamp = req.query.since || new Date(Date.now() - 30000); // Default: last 30 seconds
+        const result = await pool.query(
+            'SELECT * FROM notifications WHERE created_at > $1 ORDER BY created_at DESC LIMIT 20',
+            [sincestamp]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Mark notification as read
+app.put('/api/notifications/:id/read', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'UPDATE notifications SET read = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ error: 'Notification not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Mark all notifications as read
+app.put('/api/notifications/read-all', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'UPDATE notifications SET read = true, updated_at = CURRENT_TIMESTAMP WHERE read = false RETURNING *'
+        );
+        res.json({ success: true, message: 'All notifications marked as read', count: result.rows.length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete notification
+app.delete('/api/notifications/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM notifications WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        if (result.rows.length > 0) {
+            res.json({ success: true, message: 'Notification deleted' });
+        } else {
+            res.status(404).json({ error: 'Notification not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Clear all notifications
+app.delete('/api/notifications', async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM notifications RETURNING *');
+        res.json({ success: true, message: 'All notifications cleared', count: result.rows.length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get unread notification count
+app.get('/api/notifications/count/unread', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT COUNT(*) as count FROM notifications WHERE read = false'
+        );
+        res.json({ unread_count: parseInt(result.rows[0].count) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

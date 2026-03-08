@@ -10,6 +10,9 @@ const itemsPerPage = 10;
 let selectedRole = 'all';
 let currentEditingStaffId = null;
 let currentPermissions = {};
+let currentDeleteStaffId = null;
+let currentDeleteStaffName = null;
+let currentUser = null; // Current logged-in user from localStorage
 
 // Default permissions based on role
 const rolePermissions = {
@@ -45,6 +48,17 @@ const rolePermissions = {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Load current user from localStorage
+    const userSession = localStorage.getItem('userSession');
+    if (userSession) {
+        try {
+            currentUser = JSON.parse(userSession);
+            console.log('Current user loaded:', currentUser.name || currentUser.email);
+        } catch (err) {
+            console.error('Failed to parse user session:', err);
+        }
+    }
+    
     loadDepartments();
     loadStaffMembers();
     setupEventListeners();
@@ -122,6 +136,9 @@ function setupEventListeners() {
     // Save permissions button
     document.getElementById('savePermissionsBtn')?.addEventListener('click', savePermissions);
 
+    // Delete confirmation button
+    document.getElementById('deleteConfirmBtn')?.addEventListener('click', confirmDeleteStaff);
+
     // Pagination buttons
     document.getElementById('prevBtn')?.addEventListener('click', function() {
         if (currentPage > 1) {
@@ -149,8 +166,8 @@ async function loadDepartments() {
         if (deptFilter) {
             departments.forEach(dept => {
                 const option = document.createElement('option');
-                option.value = dept.id || dept.name;
-                option.textContent = dept.name;
+                option.value = dept.department_id;
+                option.textContent = dept.department_name;
                 deptFilter.appendChild(option);
             });
         }
@@ -297,6 +314,13 @@ function generateMockStaffData() {
     }
 }
 
+// Get department name from ID
+function getDepartmentName(deptId) {
+    if (!deptId) return 'N/A';
+    const dept = departments.find(d => d.department_id == deptId);
+    return dept ? dept.department_name : (typeof deptId === 'string' ? deptId : 'N/A');
+}
+
 // Render staff table
 function renderStaffTable(items) {
     const tbody = document.getElementById('staffTableBody');
@@ -319,7 +343,7 @@ function renderStaffTable(items) {
             </td>
             <td>${staff.email}</td>
             <td><span class="role-badge ${staff.role.toLowerCase().replace(/\s+/g, '-')}">${staff.role}</span></td>
-            <td>${staff.department}</td>
+            <td>${getDepartmentName(staff.department)}</td>
             <td><span class="status-badge ${staff.status.toLowerCase()}">${staff.status}</span></td>
             <td>
                 <a class="permissions-link" onclick="openPermissionsModal(${staff.id}, '${staff.name}')">
@@ -331,7 +355,7 @@ function renderStaffTable(items) {
                     <button class="action-btn edit" onclick="openEditStaffModal(${staff.id})">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="action-btn delete" onclick="deleteStaffMember(${staff.id})">
+                    <button class="action-btn delete" data-staff-id="${staff.id}" title="Delete Staff Member">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -339,6 +363,25 @@ function renderStaffTable(items) {
         `;
 
         tbody.appendChild(row);
+    });
+    
+    // Add event listeners to delete buttons
+    const deleteButtons = document.querySelectorAll('.action-btn.delete');
+    console.log(`Attaching event listeners to ${deleteButtons.length} delete buttons`);
+    
+    deleteButtons.forEach((btn, index) => {
+        // Remove any existing listeners first
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        // Add fresh listener
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const staffId = parseInt(this.dataset.staffId);
+            console.log(`Delete button clicked for staff ID: ${staffId}`);
+            deleteStaffMember(staffId);
+        });
     });
 }
 
@@ -395,7 +438,7 @@ function updatePermissionsDisplay(role) {
         const label = document.createElement('label');
         label.className = 'permission-item';
         label.innerHTML = `
-            <input type="checkbox" value="${perm.value}" class="permission-checkbox" ${permissions.includes(perm.value) ? 'checked' : ''} disabled>
+            <input type="checkbox" value="${perm.value}" class="permission-checkbox" ${permissions.includes(perm.value) ? 'checked' : ''}>
             <span>${perm.label}</span>
         `;
         grid.appendChild(label);
@@ -408,7 +451,7 @@ function openPermissionsModal(staffId, staffName) {
     if (!staff) return;
 
     currentEditingStaffId = staffId;
-    currentPermissions = { ...staff.permissions };
+    currentPermissions = Array.isArray(staff.permissions) ? staff.permissions : [];
 
     document.getElementById('permissionStaffName').textContent = staffName;
 
@@ -416,8 +459,26 @@ function openPermissionsModal(staffId, staffName) {
     document.querySelectorAll('.permissions-modal .permission-checkbox').forEach(checkbox => {
         checkbox.checked = currentPermissions.includes(checkbox.value);
     });
+    
+    // Update counter on open
+    updatePermissionCounter();
+    
+    // Add event listeners to all permission checkboxes for real-time counter update
+    document.querySelectorAll('#permissionsModal .permission-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updatePermissionCounter);
+    });
 
     openModal('permissionsModal');
+}
+
+// Update the permission counter in real-time
+function updatePermissionCounter() {
+    const checkedCount = document.querySelectorAll('#permissionsModal .permission-checkbox:checked').length;
+    const countEl = document.getElementById('permissionCount');
+    if (countEl) {
+        countEl.textContent = checkedCount;
+        console.log(`Updated permission count: ${checkedCount}`);
+    }
 }
 
 // Save permissions
@@ -428,27 +489,47 @@ async function savePermissions() {
         .map(cb => cb.value);
 
     const staff = staffMembers.find(s => s.id === currentEditingStaffId);
-    if (staff) {
-        try {
-            const response = await fetch(`${API_BASE}/staff/${currentEditingStaffId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...staff,
-                    permissions: newPermissions
-                })
-            });
-            
-            if (response.ok) {
-                staff.permissions = newPermissions;
-                console.log(`Updated permissions for ${staff.name}:`, newPermissions);
-                closeModal('permissionsModal');
-                loadStaffMembers();
-            }
-        } catch (error) {
-            console.error('Error updating permissions:', error);
-            alert('Failed to update permissions');
+    if (!staff) {
+        console.error('Staff member not found');
+        return;
+    }
+    
+    console.log(`Saving ${newPermissions.length} permissions for staff ${staff.name} (ID: ${currentEditingStaffId})`);
+    console.log('Permissions:', newPermissions);
+    
+    try {
+        const response = await fetch(`${API_BASE}/staff/${currentEditingStaffId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...staff,
+                permissions: newPermissions
+            })
+        });
+        
+        console.log(`PUT response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
+        
+        const responseData = await response.json();
+        console.log('Updated permissions successfully:', responseData);
+        
+        // Update the staff member in memory
+        staff.permissions = newPermissions;
+        
+        // Close modal
+        closeModal('permissionsModal');
+        
+        // Reload staff list to update permission counts in the table
+        await loadStaffMembers();
+        
+        alert('Permissions saved successfully!');
+    } catch (error) {
+        console.error('Error saving permissions:', error);
+        alert('Failed to save permissions: ' + error.message);
     }
 }
 
@@ -488,24 +569,113 @@ async function addNewStaffMember(e) {
     }
 }
 
-// Delete staff member
-async function deleteStaffMember(staffId) {
-    if (confirm('Are you sure you want to delete this staff member?')) {
-        try {
-            const response = await fetch(`${API_BASE}/staff/${staffId}`, {
-                method: 'DELETE'
-            });
+// Check if current user has permission
+function hasPermission(permission) {
+    // If no user is logged in, deny access
+    if (!currentUser) {
+        console.warn('No user logged in, denying permission:', permission);
+        return false;
+    }
+    
+    // All admin users (in the admins table) have full permissions
+    // Admin panel is restricted to admins only during login
+    // For more granular control, add role/permissions to admins table
+    console.log(`Permission check: user '${currentUser.name || currentUser.email}' requesting '${permission}' - GRANTED (admin access)`);
+    return true;
+}
 
-            if (!response.ok) {
-                throw new Error('Failed to delete staff member');
-            }
+// Delete staff member - show confirmation modal
+function deleteStaffMember(staffId) {
+    console.log(`deleteStaffMember called with staffId: ${staffId}`);
+    
+    // Check permission
+    if (!hasPermission('delete_staff')) {
+        console.warn('Permission denied for delete_staff');
+        alert('You do not have permission to delete staff members.');
+        return;
+    }
+    
+    const staff = staffMembers.find(s => s.id === staffId);
+    if (!staff) {
+        console.error(`Staff member with ID ${staffId} not found`);
+        return;
+    }
 
-            loadStaffMembers();
-            console.log(`Deleted staff member with ID: ${staffId}`);
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to delete staff member: ' + error.message);
+    console.log(`Preparing to delete staff member: ${staff.name} (ID: ${staffId})`);
+    currentDeleteStaffId = staffId;
+    currentDeleteStaffName = staff.name;
+    
+    // Update modal message
+    const messageEl = document.getElementById('deleteConfirmMessage');
+    if (messageEl) {
+        messageEl.textContent = `Are you sure you want to delete "${staff.name}"? This action cannot be undone.`;
+    }
+    
+    // Reset button state
+    const deleteBtn = document.getElementById('deleteConfirmBtn');
+    if (deleteBtn) {
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.disabled = false;
+    }
+    const cancelBtn = document.getElementById('deleteConfirmCancel');
+    if (cancelBtn) {
+        cancelBtn.disabled = false;
+    }
+    
+    openModal('deleteConfirmModal');
+}
+
+// Confirm and perform deletion
+async function confirmDeleteStaff() {
+    console.log(`confirmDeleteStaff called for staff ID: ${currentDeleteStaffId}`);
+    
+    if (!currentDeleteStaffId) {
+        console.error('No staff ID set for deletion');
+        return;
+    }
+    
+    const deleteBtn = document.getElementById('deleteConfirmBtn');
+    if (!deleteBtn) {
+        console.error('Delete button not found');
+        return;
+    }
+    
+    deleteBtn.textContent = 'Deleting...';
+    deleteBtn.disabled = true;
+    const cancelBtn = document.getElementById('deleteConfirmCancel');
+    if (cancelBtn) cancelBtn.disabled = true;
+    
+    try {
+        console.log(`Sending DELETE request to ${API_BASE}/staff/${currentDeleteStaffId}`);
+        const response = await fetch(`${API_BASE}/staff/${currentDeleteStaffId}`, {
+            method: 'DELETE'
+        });
+
+        console.log(`DELETE response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorData}`);
         }
+
+        console.log(`Successfully deleted staff member with ID: ${currentDeleteStaffId}`);
+        closeModal('deleteConfirmModal');
+        
+        currentDeleteStaffId = null;
+        currentDeleteStaffName = null;
+        
+        // Reload the staff list
+        loadStaffMembers();
+        
+        alert('Staff member deleted successfully');
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete staff member: ' + error.message);
+        
+        // Reset button state on error
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.disabled = false;
+        if (cancelBtn) cancelBtn.disabled = false;
     }
 }
 

@@ -219,7 +219,7 @@ async function loadDashboardData() {
         const employeesRes = await fetch(`${API_BASE}/employees`);
         if (employeesRes.ok) {
             const employees = await employeesRes.json();
-            const activeEmployees = employees.filter(e => e.status === 'active' || !e.status);
+            const activeEmployees = employees.filter(e => e.employment_status === 'Active' || !e.employment_status);
             const totalEl = document.getElementById('totalEmployees');
             if (totalEl) totalEl.textContent = activeEmployees.length;
         }
@@ -227,7 +227,7 @@ async function loadDashboardData() {
         const departmentsRes = await fetch(`${API_BASE}/departments`);
         if (departmentsRes.ok) {
             const departments = await departmentsRes.json();
-            const activeDepts = departments.filter(d => d.status === 'active' || !d.status);
+            const activeDepts = departments.filter(d => d.status === 'Active' || !d.status);
             const totalEl = document.getElementById('totalDepartments');
             if (totalEl) totalEl.textContent = activeDepts.length;
         }
@@ -833,8 +833,8 @@ async function loadEmployeesForDropdown() {
             if (select) {
                 const currentValue = select.value;
                 const options = employees
-                    .filter(emp => emp.status === 'active' || !emp.status)
-                    .map(emp => `<option value="${emp.id}">${emp.first_name} ${emp.last_name}</option>`)
+                    .filter(emp => emp.employment_status === 'Active' || !emp.employment_status)
+                    .map(emp => `<option value="${emp.employee_id}">${emp.first_name} ${emp.last_name}</option>`)
                     .join('');
                 select.innerHTML = '<option value="">-- Select an Employee --</option>' + options;
                 select.value = currentValue;
@@ -854,8 +854,8 @@ async function loadDepartmentsForDropdown() {
             if (select) {
                 const currentValue = select.value;
                 const options = departments
-                    .filter(dept => dept.status === 'active' || !dept.status)
-                    .map(dept => `<option value="${dept.id}">${dept.name}</option>`)
+                    .filter(dept => dept.status === 'Active' || !dept.status)
+                    .map(dept => `<option value="${dept.department_id}">${dept.department_name}</option>`)
                     .join('');
                 select.innerHTML = '<option value="">-- Select a Department --</option>' + options;
                 select.value = currentValue;

@@ -36,6 +36,7 @@ function initializeDashboard() {
     // Setup event listeners
     setupRefreshButton();
     setupGlobalSearch();
+    initializeNotifications();
     
     // Start auto-refresh
     startAutoRefresh();
@@ -404,7 +405,404 @@ function confirmLogout() {
 }
 
 // ===== NOTIFICATION SYSTEM =====
+let notificationsList = [];
+let currentFilter = 'all';
 
+// Initialize notifications on dashboard load
+function initializeNotifications() {
+    setupNotificationBellListener();
+    loadNotifications();
+    startNotificationListener();
+}
 
+// Setup notification bell click listener
+function setupNotificationBellListener() {
+    const notificationBell = document.getElementById('notificationBell');
+    if (notificationBell) {
+        notificationBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleNotificationPanel();
+        });
+    }
+    
+    // Close panel when clicking outside
+    document.addEventListener('click', function(e) {
+        const panel = document.getElementById('notificationPanel');
+        const bell = document.getElementById('notificationBell');
+        if (panel && bell && !panel.contains(e.target) && !bell.contains(e.target)) {
+            closeNotificationPanel();
+        }
+    });
+}
+
+// Toggle notification panel visibility
+function toggleNotificationPanel() {
+    const panel = document.getElementById('notificationPanel');
+    if (panel) {
+        panel.classList.toggle('active');
+    }
+}
+
+// Close notification panel
+function closeNotificationPanel() {
+    const panel = document.getElementById('notificationPanel');
+    if (panel) {
+        panel.classList.remove('active');
+    }
+}
+
+// Load notifications from backend or use sample data
+async function loadNotifications() {
+    try {
+        // Try to fetch from backend
+        const response = await fetch(`${API_BASE}/notifications`);
+        if (response.ok) {
+            notificationsList = await response.json();
+        } else {
+            // Use sample notifications if backend unavailable
+            notificationsList = getSampleNotifications();
+        }
+    } catch (error) {
+        console.log('Using sample notifications (backend unavailable):', error.message);
+        notificationsList = getSampleNotifications();
+    }
+    
+    updateNotificationUI();
+}
+
+// Get sample notifications for demo
+function getSampleNotifications() {
+    return [
+        {
+            id: 1,
+            title: 'New Patient Created',
+            message: 'Patient John Doe has been registered',
+            type: 'created',
+            icon: 'fas fa-user-plus',
+            timestamp: new Date(Date.now() - 5 * 60000),
+            read: false,
+            category: 'Design'
+        },
+        {
+            id: 2,
+            title: 'Device Status Updated',
+            message: 'Device Mon-001 is now online',
+            type: 'updated',
+            icon: 'fas fa-laptop',
+            timestamp: new Date(Date.now() - 15 * 60000),
+            read: false,
+            category: 'Engineering'
+        },
+        {
+            id: 3,
+            title: 'Employee Deleted',
+            message: 'Employee ID EMP-045 has been removed',
+            type: 'deleted',
+            icon: 'fas fa-user-times',
+            timestamp: new Date(Date.now() - 30 * 60000),
+            read: true,
+            category: 'Design'
+        },
+        {
+            id: 4,
+            title: 'Department Updated',
+            message: 'Cardiology department info updated',
+            type: 'updated',
+            icon: 'fas fa-building',
+            timestamp: new Date(Date.now() - 1 * 3600000),
+            read: true,
+            category: 'Engineering'
+        },
+        {
+            id: 5,
+            title: 'New Alert Created',
+            message: 'High priority alert: Server temperature high',
+            type: 'created',
+            icon: 'fas fa-exclamation-triangle',
+            timestamp: new Date(Date.now() - 2 * 3600000),
+            read: true,
+            category: 'Engineering'
+        }
+    ];
+}
+
+// Update notification UI
+function updateNotificationUI() {
+    const badge = document.getElementById('notificationBadge');
+    const notificationList = document.getElementById('notificationList');
+    
+    // Update badge
+    const unreadCount = notificationsList.filter(n => !n.read).length;
+    if (badge) {
+        badge.textContent = unreadCount;
+        if (unreadCount > 0) {
+            badge.classList.add('active');
+        } else {
+            badge.classList.remove('active');
+        }
+    }
+    
+    // Update notification list
+    renderNotifications(currentFilter);
+}
+
+// Render notifications based on filter
+function renderNotifications(filter) {
+    const notificationList = document.getElementById('notificationList');
+    if (!notificationList) return;
+    
+    currentFilter = filter;
+    
+    let filteredNotifications = notificationsList;
+    if (filter !== 'all') {
+        filteredNotifications = notificationsList.filter(n => n.type === filter);
+    }
+    
+    if (filteredNotifications.length === 0) {
+        notificationList.innerHTML = `
+            <div class="notification-empty">
+                <i class="fas fa-inbox"></i>
+                <p>No ${filter === 'all' ? '' : filter + ' '} notifications</p>
+            </div>
+        `;
+        return;
+    }
+    
+    notificationList.innerHTML = filteredNotifications.map(notification => `
+        <div class="notification-item ${notification.read ? '' : 'unread'}" onclick="markNotificationAsRead(${notification.id})">
+            <div class="notification-icon ${notification.type}">
+                <i class="${notification.icon}"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">${escapeHtml(notification.title)}</div>
+                <div class="notification-message">${escapeHtml(notification.message)}</div>
+                <div class="notification-meta">
+                    <span class="notification-badge ${notification.type}">${notification.type}</span>
+                    <span>${formatTimeAgo(new Date(notification.timestamp))}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Update filter buttons
+    updateFilterButtons();
+}
+
+// Update filter button states
+function updateFilterButtons() {
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase() === currentFilter) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+// Filter notifications by type
+function filterNotifications(type) {
+    renderNotifications(type);
+}
+
+// Mark notification as read
+function markNotificationAsRead(id) {
+    const notification = notificationsList.find(n => n.id === id);
+    if (notification && !notification.read) {
+        notification.read = true;
+        
+        // Send to backend
+        fetch(`${API_BASE}/notifications/${id}/read`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' }
+        }).catch(err => console.log('Could not sync with backend:', err));
+        
+        updateNotificationUI();
+    }
+}
+
+// Clear all notifications
+function clearAllNotifications() {
+    if (confirm('Are you sure you want to clear all notifications?')) {
+        // Send to backend
+        fetch(`${API_BASE}/notifications`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        }).then(res => {
+            if (res.ok) {
+                notificationsList = [];
+                updateNotificationUI();
+            }
+        }).catch(err => console.log('Could not sync with backend:', err));
+    }
+}
+
+// Start listening for new notifications (polling)
+function startNotificationListener() {
+    let lastCheckTime = new Date();
+    
+    // Poll for new notifications every 10 seconds
+    setInterval(async () => {
+        try {
+            const response = await fetch(`${API_BASE}/notifications/new?since=${lastCheckTime.toISOString()}`);
+            if (response.ok) {
+                const newNotifications = await response.json();
+                if (newNotifications && newNotifications.length > 0) {
+                    // Add new notifications to the list
+                    notificationsList = [...newNotifications, ...notificationsList];
+                    updateNotificationUI();
+                    
+                    // Show toast for each new notification
+                    newNotifications.forEach(notif => {
+                        showNotificationToast(notif.title, notif.message, notif.type);
+                    });
+                }
+                lastCheckTime = new Date();
+            }
+        } catch (error) {
+            // Silently fail if backend is not available
+            console.log('Notification polling failed:', error.message);
+        }
+    }, 10000);
+}
+
+// Add new notification (can be called from other parts of the app)
+function addNotification(title, message, type = 'created', category = 'General') {
+    const newNotification = {
+        id: notificationsList.length + 1,
+        title: title,
+        message: message,
+        type: type,
+        icon: getIconForType(type),
+        timestamp: new Date(),
+        read: false,
+        category: category
+    };
+    
+    notificationsList.unshift(newNotification);
+    updateNotificationUI();
+    
+    // Show toast notification
+    showNotificationToast(title, message, type);
+}
+
+// Get appropriate icon based on notification type
+function getIconForType(type) {
+    const icons = {
+        'created': 'fas fa-plus-circle',
+        'updated': 'fas fa-edit',
+        'deleted': 'fas fa-trash-alt',
+        'default': 'fas fa-bell'
+    };
+    return icons[type] || icons['default'];
+}
+
+// Show toast notification
+function showNotificationToast(title, message, type) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `notification-toast notification-toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="${getIconForType(type)}"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">${escapeHtml(title)}</div>
+            <div class="toast-message">${escapeHtml(message)}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    // Add toast styles if not already present
+    if (!document.querySelector('#notificationToastStyles')) {
+        const style = document.createElement('style');
+        style.id = 'notificationToastStyles';
+        style.textContent = `
+            .notification-toast {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                padding: 16px;
+                display: flex;
+                gap: 12px;
+                align-items: flex-start;
+                max-width: 400px;
+                z-index: 2000;
+                animation: slideInRight 0.3s ease;
+            }
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            .toast-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                flex-shrink: 0;
+            }
+            .notification-toast-created .toast-icon {
+                background: #dcfce7;
+                color: #16a34a;
+            }
+            .notification-toast-updated .toast-icon {
+                background: #e0f2fe;
+                color: #0284c7;
+            }
+            .notification-toast-deleted .toast-icon {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+            .toast-content {
+                flex: 1;
+            }
+            .toast-title {
+                font-weight: 600;
+                color: #1e293b;
+                margin-bottom: 2px;
+                font-size: 14px;
+            }
+            .toast-message {
+                font-size: 12px;
+                color: #64748b;
+            }
+            .toast-close {
+                background: none;
+                border: none;
+                font-size: 20px;
+                cursor: pointer;
+                color: #94a3b8;
+                padding: 0;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .toast-close:hover {
+                color: #1e293b;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove toast after 5 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
 
 // End of dashboard functions

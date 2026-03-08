@@ -424,3 +424,170 @@ CREATE TABLE IF NOT EXISTS complaint_activity_log (
 CREATE INDEX IF NOT EXISTS idx_complaint_activity_created ON complaint_activity_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_complaint_activity_type ON complaint_activity_log(activity_type);
 CREATE INDEX IF NOT EXISTS idx_complaint_activity_severity ON complaint_activity_log(severity);
+
+-- Notifications Table
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) CHECK (type IN ('created', 'updated', 'deleted', 'system', 'alert')) NOT NULL,
+    icon VARCHAR(100) DEFAULT 'fas fa-bell',
+    category VARCHAR(100),
+    related_table VARCHAR(100),
+    related_id INTEGER,
+    related_item_name VARCHAR(255),
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE,
+    read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for notifications
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_admin_id ON notifications(admin_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
+
+-- Function to create notifications on table changes
+CREATE OR REPLACE FUNCTION create_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+    notification_type VARCHAR(50);
+    notification_title VARCHAR(255);
+    notification_message TEXT;
+    notification_icon VARCHAR(100);
+    related_table_name VARCHAR(100);
+    related_id_value INTEGER;
+    related_name VARCHAR(255);
+BEGIN
+    -- Determine table name and notification details
+    related_table_name := TG_TABLE_NAME;
+    
+    IF TG_OP = 'INSERT' THEN
+        notification_type := 'created';
+        -- Get correct ID based on table
+        IF related_table_name = 'employees' THEN
+            related_id_value := NEW.employee_id;
+        ELSIF related_table_name = 'departments' THEN
+            related_id_value := NEW.department_id;
+        ELSE
+            related_id_value := NEW.id;
+        END IF;
+    ELSIF TG_OP = 'UPDATE' THEN
+        notification_type := 'updated';
+        -- Get correct ID based on table
+        IF related_table_name = 'employees' THEN
+            related_id_value := NEW.employee_id;
+        ELSIF related_table_name = 'departments' THEN
+            related_id_value := NEW.department_id;
+        ELSE
+            related_id_value := NEW.id;
+        END IF;
+    ELSIF TG_OP = 'DELETE' THEN
+        notification_type := 'deleted';
+        -- Get correct ID based on table
+        IF related_table_name = 'employees' THEN
+            related_id_value := OLD.employee_id;
+        ELSIF related_table_name = 'departments' THEN
+            related_id_value := OLD.department_id;
+        ELSE
+            related_id_value := OLD.id;
+        END IF;
+    END IF;
+    
+    -- Set notification based on table
+    CASE related_table_name
+        WHEN 'patients' THEN
+            notification_title := CASE 
+                WHEN TG_OP = 'INSERT' THEN 'New Patient Created'
+                WHEN TG_OP = 'UPDATE' THEN 'Patient Updated'
+                ELSE 'Patient Deleted'
+            END;
+            notification_message := COALESCE(NEW.name, OLD.name, 'Unknown Patient');
+            notification_icon := 'fas fa-user-plus';
+            related_name := COALESCE(NEW.name, OLD.name);
+            
+        WHEN 'devices' THEN
+            notification_title := CASE 
+                WHEN TG_OP = 'INSERT' THEN 'New Device Added'
+                WHEN TG_OP = 'UPDATE' THEN 'Device Status Updated'
+                ELSE 'Device Removed'
+            END;
+            notification_message := COALESCE(NEW.name, OLD.name, 'Device') || ' is now ' || COALESCE(NEW.status, OLD.status, 'offline');
+            notification_icon := 'fas fa-laptop';
+            related_name := COALESCE(NEW.name, OLD.name);
+            
+        WHEN 'employees' THEN
+            notification_title := CASE 
+                WHEN TG_OP = 'INSERT' THEN 'New Employee Added'
+                WHEN TG_OP = 'UPDATE' THEN 'Employee Information Updated'
+                ELSE 'Employee Removed'
+            END;
+            notification_message := COALESCE(NEW.first_name, OLD.first_name, '') || ' ' || COALESCE(NEW.last_name, OLD.last_name, 'Unknown');
+            notification_icon := 'fas fa-user-tie';
+            related_name := COALESCE(NEW.first_name, OLD.first_name, '') || ' ' || COALESCE(NEW.last_name, OLD.last_name, '');
+            
+        WHEN 'departments' THEN
+            notification_title := CASE 
+                WHEN TG_OP = 'INSERT' THEN 'New Department Created'
+                WHEN TG_OP = 'UPDATE' THEN 'Department Updated'
+                ELSE 'Department Deleted'
+            END;
+            notification_message := COALESCE(NEW.department_name, OLD.department_name, 'Unknown Department');
+            notification_icon := 'fas fa-building';
+            related_name := COALESCE(NEW.department_name, OLD.department_name);
+            
+        WHEN 'alerts' THEN
+            notification_title := CASE 
+                WHEN TG_OP = 'INSERT' THEN 'New Alert Created'
+                WHEN TG_OP = 'UPDATE' THEN 'Alert Updated'
+                ELSE 'Alert Deleted'
+            END;
+            notification_message := COALESCE(NEW.title, OLD.title, 'System Alert');
+            notification_icon := 'fas fa-exclamation-triangle';
+            related_name := COALESCE(NEW.title, OLD.title);
+            
+        ELSE
+            notification_title := CASE 
+                WHEN TG_OP = 'INSERT' THEN 'New Record Created'
+                WHEN TG_OP = 'UPDATE' THEN 'Record Updated'
+                ELSE 'Record Deleted'
+            END;
+            notification_message := related_table_name || ' record ' || TG_OP;
+            notification_icon := 'fas fa-bell';
+            related_name := NULL;
+    END CASE;
+    
+    -- Insert notification
+    INSERT INTO notifications (title, message, type, icon, category, related_table, related_id, related_item_name)
+    VALUES (notification_title, notification_message, notification_type, notification_icon, related_table_name, related_table_name, related_id_value, related_name);
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create triggers for tables
+DROP TRIGGER IF EXISTS trigger_patients_notification ON patients;
+CREATE TRIGGER trigger_patients_notification
+AFTER INSERT OR UPDATE OR DELETE ON patients
+FOR EACH ROW EXECUTE FUNCTION create_notification();
+
+DROP TRIGGER IF EXISTS trigger_devices_notification ON devices;
+CREATE TRIGGER trigger_devices_notification
+AFTER INSERT OR UPDATE OR DELETE ON devices
+FOR EACH ROW EXECUTE FUNCTION create_notification();
+
+DROP TRIGGER IF EXISTS trigger_employees_notification ON employees;
+CREATE TRIGGER trigger_employees_notification
+AFTER INSERT OR UPDATE OR DELETE ON employees
+FOR EACH ROW EXECUTE FUNCTION create_notification();
+
+DROP TRIGGER IF EXISTS trigger_departments_notification ON departments;
+CREATE TRIGGER trigger_departments_notification
+AFTER INSERT OR UPDATE OR DELETE ON departments
+FOR EACH ROW EXECUTE FUNCTION create_notification();
+
+DROP TRIGGER IF EXISTS trigger_alerts_notification ON alerts;
+CREATE TRIGGER trigger_alerts_notification
+AFTER INSERT OR UPDATE OR DELETE ON alerts
+FOR EACH ROW EXECUTE FUNCTION create_notification();
