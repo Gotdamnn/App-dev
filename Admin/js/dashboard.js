@@ -403,3 +403,8 @@ function confirmLogout() {
     window.location.href = '/login';
 }
 
+// ===== NOTIFICATION SYSTEM =====
+
+
+
+// End of dashboard functions

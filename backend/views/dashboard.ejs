@@ -20,10 +20,6 @@
                 <div id="searchResults" class="search-results"></div>
             </div>
             <div class="navbar-actions">
-                <div class="notification" onclick="window.location.href='/alerts'">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge" id="alertBadge">0</span>
-                </div>
                 <div class="admin-profile">
                     <div class="admin-avatar">AD</div>
                     <div class="admin-info">
@@ -202,5 +198,33 @@
             </div>
         </div>
     </div>
+
+    <!-- Notifications Modal - DISABLED -->
+    <!-- 
+    <div class="modal" id="notificationsModal">
+        <div class="modal-content notifications-panel">
+            <div class="notifications-header">
+                <h3>Your Notifications</h3>
+                <button class="modal-close" onclick="closeNotificationsModal()">&times;</button>
+            </div>
+            
+            <div class="notifications-tabs">
+                <button class="notification-tab-btn active" onclick="filterNotifications('all')">View All <span id="allCount">0</span></button>
+                <button class="notification-tab-btn" onclick="filterNotifications('critical')">Critical <span id="criticalCount">0</span></button>
+                <button class="notification-tab-btn" onclick="filterNotifications('warning')">Warnings <span id="warningCount">0</span></button>
+            </div>
+            
+            <div class="notifications-list" id="notificationsBody">
+                <p style="text-align: center; color: #9ca3af; padding: 40px 20px;">No notifications</p>
+            </div>
+            
+            <div class="notifications-footer">
+                <button type="button" class="btn-text" onclick="clearNotifications()">Clear All</button>
+                <button type="button" class="btn-close" onclick="closeNotificationsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    -->
+
 </body>
 </html>

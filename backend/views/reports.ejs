@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics & Reports - PatientPulse</title>
+    <title>Reports - PatientPulse Admin</title>
     <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/reports.css">
     <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -16,10 +17,38 @@
     <div class="main">
         <div class="page-header">
             <div>
-                <h1>Analytics & Reports</h1>
-                <div class="page-subtitle">View system analytics, generate reports, and track performance</div>
+                <h1>Reports & Complaints</h1>
+                <div class="page-subtitle">Manage employee and department complaints and generate system reports</div>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" id="newReportBtn">
+                    <i class="fas fa-plus"></i> New Complaint Report
+                </button>
             </div>
         </div>
+
+        <!-- Tabs for Different Report Types -->
+        <ul class="nav nav-tabs mb-4" id="reportTabs">
+            <li class="nav-item">
+                <a class="nav-link active" id="analyticsTab" href="#analytics" data-bs-toggle="tab">
+                    <i class="fas fa-chart-line"></i> Analytics & System Reports
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="employeeTab" href="#employeeReports" data-bs-toggle="tab">
+                    <i class="fas fa-user-circle"></i> Employee Complaints
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="departmentTab" href="#departmentReports" data-bs-toggle="tab">
+                    <i class="fas fa-building"></i> Department Complaints
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- ANALYTICS TAB -->
+            <div class="tab-pane fade show active" id="analytics">
 
         <!-- Reports Header with Date Filter and Export -->
         <div class="reports-header">
@@ -232,6 +261,310 @@
                 </div>
             </div>
         </div>
+
+            <!-- EMPLOYEE REPORTS TAB -->
+            <div class="tab-pane fade" id="employeeReports">
+                <!-- Statistics Cards -->
+                <div class="summary-cards mb-4">
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #ff6b6b;">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="empTotalReports">0</div>
+                            <div class="summary-label">Total Reports</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #ffa94d;">
+                            <i class="fas fa-hourglass"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="empOpenReports">0</div>
+                            <div class="summary-label">Open Reports</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #ff922b;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="empCriticalReports">0</div>
+                            <div class="summary-label">Critical Reports</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #51cf66;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="empResolvedReports">0</div>
+                            <div class="summary-label">Resolved Reports</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="reports-header mb-3">
+                    <div class="date-range-filter">
+                        <input type="text" id="empSearch" class="date-input" placeholder="Search reports...">
+                        <select id="empStatusFilter" class="date-input">
+                            <option value="">All Status</option>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                        <select id="empSeverityFilter" class="date-input">
+                            <option value="">All Severity</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                        <button class="btn-export csv" id="empFilterBtn">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Employee Reports Table -->
+                <div class="data-table-section">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Report ID</th>
+                                <th>Employee</th>
+                                <th>Category</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Reported By</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeReportsBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Top Reported Employees -->
+                <div class="charts-section mt-4">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Top 10 Reported Employees</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="topEmployeesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEPARTMENT REPORTS TAB -->
+            <div class="tab-pane fade" id="departmentReports">
+                <!-- Statistics Cards -->
+                <div class="summary-cards mb-4">
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #ff6b6b;">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="deptTotalReports">0</div>
+                            <div class="summary-label">Total Reports</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #ffa94d;">
+                            <i class="fas fa-hourglass"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="deptOpenReports">0</div>
+                            <div class="summary-label">Open Reports</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #ff922b;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="deptCriticalReports">0</div>
+                            <div class="summary-label">Critical Reports</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: #51cf66;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="deptResolvedReports">0</div>
+                            <div class="summary-label">Resolved Reports</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="reports-header mb-3">
+                    <div class="date-range-filter">
+                        <input type="text" id="deptSearch" class="date-input" placeholder="Search reports...">
+                        <select id="deptStatusFilter" class="date-input">
+                            <option value="">All Status</option>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                        <select id="deptSeverityFilter" class="date-input">
+                            <option value="">All Severity</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                        <button class="btn-export csv" id="deptFilterBtn">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Department Reports Table -->
+                <div class="data-table-section">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Report ID</th>
+                                <th>Department</th>
+                                <th>Category</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Reported By</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="departmentReportsBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Most Reported Departments -->
+                <div class="charts-section mt-4">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Top 10 Reported Departments</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="topDepartmentsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Complaint Report Modal -->
+    <div class="modal" id="newReportModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Submit New Complaint Report</h2>
+                <button class="modal-close" onclick="closeNewReportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Report Type Selection -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 500;">Report Type</label>
+                    <div>
+                        <input type="radio" name="reportType" id="empReportType" value="employee" checked>
+                        <label for="empReportType" style="display: inline; margin-right: 20px;">Employee Report</label>
+                        <input type="radio" name="reportType" id="deptReportType" value="department">
+                        <label for="deptReportType" style="display: inline;">Department Report</label>
+                    </div>
+                </div>
+
+                <!-- Employee Report Form -->
+                <div id="employeeReportForm">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Employee Name</label>
+                        <select id="reportEmployee" class="form-control">
+                            <option value="">-- Select an Employee --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Department Report Form (hidden) -->
+                <div id="departmentReportForm" style="display:none; margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Department Name</label>
+                    <select id="reportDepartment" class="form-control">
+                        <option value="">-- Select a Department --</option>
+                    </select>
+                </div>
+
+                <!-- Common Fields -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Report Title</label>
+                    <input type="text" id="reportTitle" class="form-control" placeholder="Brief title...">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Description</label>
+                    <textarea id="reportDescription" class="form-control" rows="4" placeholder="Detailed description..."></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Category</label>
+                        <select id="reportCategory" class="form-control">
+                            <option value="Conduct">Conduct</option>
+                            <option value="Performance">Performance</option>
+                            <option value="Communication">Communication</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Severity</label>
+                        <select id="reportSeverity" class="form-control">
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Name</label>
+                    <input type="text" id="reportedByName" class="form-control" placeholder="Your full name...">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Email</label>
+                    <input type="email" id="reportedByEmail" class="form-control" placeholder="your@email.com">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeNewReportModal()">Cancel</button>
+                <button type="button" class="btn-export csv" id="submitReportBtn" onclick="submitReport()">Submit Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Details Modal -->
+    <div class="modal" id="reportDetailsModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Report Details</h2>
+                <button class="modal-close" onclick="closeReportDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="reportDetailsContent">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeReportDetailsModal()">Close</button>
+                <button type="button" class="btn-export csv" id="updateReportBtn">Update Status</button>
+            </div>
+        </div>
     </div>
 
     <!-- Logout Confirmation Modal -->
@@ -257,22 +590,279 @@
     <style>
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal.show { display: flex; }
-        .confirm-modal { background: white; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; z-index: 1001; }
-        .confirm-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; }
-        .confirm-modal .modal-header h2 { margin: 0; font-size: 18px; color: #333; }
-        .confirm-modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
-        .confirm-modal .modal-close:hover { color: #333; }
-        .modal-body { padding: 30px; text-align: center; }
-        .modal-body p { color: #666; margin: 0; }
-        .status-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
-        .status-icon.warning { background: #fef3c7; color: #f59e0b; }
-        .form-actions { display: flex; gap: 12px; padding: 20px; border-top: 1px solid #eee; justify-content: flex-end; }
-        .btn-cancel { padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-size: 14px; position: relative; z-index: 1002; }
-        .btn-cancel:hover { background: #f5f5f5; }
-        .btn-delete { padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; position: relative; z-index: 1002; }
-        .btn-delete:hover { background: #dc2626; }
+        
+        /* Light/White Theme Modal Styles */
+        .modal-content { 
+            background: #ffffff; 
+            border-radius: 12px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
+            position: relative; 
+            z-index: 1001;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .modal-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 25px; 
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+        }
+        
+        .modal-header h2 { 
+            margin: 0; 
+            font-size: 20px; 
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .modal-close { 
+            background: none; 
+            border: none; 
+            font-size: 28px; 
+            cursor: pointer; 
+            color: #6b7280;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover { 
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .modal-body { 
+            padding: 25px;
+            color: #374151;
+            background: #ffffff;
+        }
+        
+        .modal-body p { 
+            color: #374151; 
+            margin: 0;
+        }
+        
+        .modal-body input,
+        .modal-body textarea,
+        .modal-body select {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            color: #1f2937;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .modal-body input:focus,
+        .modal-body textarea:focus,
+        .modal-body select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: #ffffff;
+            color: #1f2937;
+        }
+        
+        .modal-body label {
+            color: #4b5563;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .status-icon { 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 0 auto 20px; 
+            font-size: 24px; 
+        }
+        
+        .status-icon.warning { 
+            background: rgba(245, 158, 11, 0.15); 
+            color: #f59e0b; 
+        }
+        
+        .form-actions { 
+            display: flex; 
+            gap: 12px; 
+            padding: 20px 25px; 
+            border-top: 1px solid #e5e7eb; 
+            justify-content: flex-end;
+            background: #f9fafb;
+        }
+        
+        .btn-cancel { 
+            padding: 10px 20px; 
+            border: 1px solid #d1d5db; 
+            background: #ffffff; 
+            color: #374151;
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            position: relative; 
+            z-index: 1002;
+            transition: all 0.2s;
+        }
+        
+        .btn-cancel:hover { 
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        
+        .btn-export { 
+            padding: 10px 20px; 
+            background: #3b82f6; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            position: relative; 
+            z-index: 1002;
+            transition: all 0.2s;
+        }
+        
+        .btn-export:hover { 
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-delete { 
+            padding: 10px 20px; 
+            background: #ef4444; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            position: relative; 
+            z-index: 1002;
+            transition: all 0.2s;
+        }
+        
+        .btn-delete:hover { 
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
     </style>
 
+    <!-- Notifications Modal -->
+    <div class="modal" id="notificationsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Notifications</h2>
+                <button class="modal-close" onclick="closeNotificationsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="notificationsBody" style="max-height: 400px; overflow-y: auto;">
+                <p style="text-align: center; color: #9ca3af;">Loading notifications...</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeNotificationsModal()">Close</button>
+                <button type="button" class="btn-export" onclick="clearNotifications()">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Bell Styles -->
+    <style>
+        .notification-bell {
+            position: relative;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #374151;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-right: 15px;
+        }
+
+        .notification-bell:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            border: 2px solid #ffffff;
+        }
+
+        .notification-item {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #f9fafb;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .notification-item.critical {
+            border-left: 4px solid #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .notification-item.warning {
+            border-left: 4px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .notification-item.info {
+            border-left: 4px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .notification-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .notification-content {
+            flex-grow: 1;
+        }
+
+        .notification-content strong {
+            display: block;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .notification-content span {
+            color: #6b7280;
+            font-size: 12px;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/dashboard.js"></script>
     <script src="/js/reports.js"></script>
 </body>
