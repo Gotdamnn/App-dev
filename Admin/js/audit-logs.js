@@ -158,10 +158,11 @@ function loadAuditLogs() {
                 return response.json();
             })
             .then(data => {
-                auditLogs = data;
+                // Extract logs array from response
+                auditLogs = Array.isArray(data) ? data : (data.logs || []);
 
                 // Sort by timestamp descending
-                auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                auditLogs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
                 // Pagination
                 const totalPages = Math.ceil(auditLogs.length / itemsPerPage);
@@ -208,7 +209,7 @@ function renderAuditTable(items) {
         const row = document.createElement('tr');
 
         const actionClass = log.action.toLowerCase();
-        const timestamp = new Date(log.timestamp);
+        const timestamp = new Date(log.created_at);
         const formattedDate = timestamp.toLocaleString('en-US', {
             year: 'numeric',
             month: '2-digit',
@@ -248,7 +249,7 @@ function openDetailsModal(logId) {
     currentLogDetails = log;
 
     // Populate detail info
-    const timestamp = new Date(log.timestamp);
+    const timestamp = new Date(log.created_at);
     const formattedDate = timestamp.toLocaleString();
 
     document.getElementById('detailTimestamp').textContent = formattedDate;

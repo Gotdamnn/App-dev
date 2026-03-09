@@ -242,27 +242,6 @@ CREATE TABLE IF NOT EXISTS system_activity (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Report snapshots for storing periodic statistics
-CREATE TABLE IF NOT EXISTS report_snapshots (
-    id SERIAL PRIMARY KEY,
-    snapshot_date DATE NOT NULL,
-    total_patients INTEGER DEFAULT 0,
-    active_patients INTEGER DEFAULT 0,
-    total_employees INTEGER DEFAULT 0,
-    active_employees INTEGER DEFAULT 0,
-    total_departments INTEGER DEFAULT 0,
-    active_departments INTEGER DEFAULT 0,
-    total_devices INTEGER DEFAULT 0,
-    online_devices INTEGER DEFAULT 0,
-    total_alerts INTEGER DEFAULT 0,
-    critical_alerts INTEGER DEFAULT 0,
-    resolved_alerts INTEGER DEFAULT 0,
-    system_uptime DECIMAL(5,2) DEFAULT 99.9,
-    avg_response_time INTEGER DEFAULT 150,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(snapshot_date)
-);
-
 -- Department statistics for performance tracking
 CREATE TABLE IF NOT EXISTS department_stats (
     id SERIAL PRIMARY KEY,
@@ -276,13 +255,7 @@ CREATE TABLE IF NOT EXISTS department_stats (
     UNIQUE(department_id, stat_date)
 );
 
--- Indexes for reports tables
-CREATE INDEX IF NOT EXISTS idx_system_activity_created ON system_activity(created_at);
-CREATE INDEX IF NOT EXISTS idx_system_activity_type ON system_activity(activity_type);
-CREATE INDEX IF NOT EXISTS idx_report_snapshots_date ON report_snapshots(snapshot_date);
-CREATE INDEX IF NOT EXISTS idx_department_stats_date ON department_stats(stat_date);
-
--- ===== AUDIT LOGS TABLE =====
+-- Indexes for audit logs
 CREATE TABLE IF NOT EXISTS audit_logs (
     id SERIAL PRIMARY KEY,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -302,83 +275,6 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_admin_id ON audit_logs(admin_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_table_name ON audit_logs(table_name);
-
--- ===== EMPLOYEE & DEPARTMENT COMPLAINTS/REPORTS TABLE =====
-CREATE TABLE IF NOT EXISTS employee_reports (
-    id SERIAL PRIMARY KEY,
-    report_type VARCHAR(50) CHECK (report_type IN ('Complaint', 'Review', 'Feedback', 'Incident')) DEFAULT 'Complaint',
-    employee_id INTEGER NOT NULL REFERENCES employees(employee_id) ON DELETE CASCADE,
-    employee_name VARCHAR(255),
-    department_id INTEGER REFERENCES departments(department_id),
-    department_name VARCHAR(255),
-    reported_by VARCHAR(255) NOT NULL,
-    reported_by_email VARCHAR(255) NOT NULL,
-    reported_by_type VARCHAR(50) CHECK (reported_by_type IN ('Patient', 'Staff', 'Client', 'Management', 'Other')) DEFAULT 'Patient',
-    report_title VARCHAR(255) NOT NULL,
-    report_description TEXT NOT NULL,
-    severity VARCHAR(50) CHECK (severity IN ('Low', 'Medium', 'High', 'Critical')) DEFAULT 'Medium',
-    category VARCHAR(100) CHECK (category IN ('Conduct', 'Performance', 'Communication', 'Patient Care', 'Safety', 'Professionalism', 'Other')) DEFAULT 'Other',
-    status VARCHAR(50) CHECK (status IN ('Open', 'In Progress', 'Under Review', 'Resolved', 'Closed', 'Appeal')) DEFAULT 'Open',
-    priority VARCHAR(50) CHECK (priority IN ('Low', 'Medium', 'High', 'Urgent')) DEFAULT 'Medium',
-    assigned_to VARCHAR(255),
-    investigation_notes TEXT,
-    outcome VARCHAR(255),
-    resolution_date DATE,
-    attachments TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS department_reports (
-    id SERIAL PRIMARY KEY,
-    report_type VARCHAR(50) CHECK (report_type IN ('Complaint', 'Review', 'Feedback', 'Incident')) DEFAULT 'Complaint',
-    department_id INTEGER NOT NULL REFERENCES departments(department_id) ON DELETE CASCADE,
-    department_name VARCHAR(255),
-    reported_by VARCHAR(255) NOT NULL,
-    reported_by_email VARCHAR(255) NOT NULL,
-    reported_by_type VARCHAR(50) CHECK (reported_by_type IN ('Patient', 'Staff', 'Client', 'Management', 'Other')) DEFAULT 'Patient',
-    report_title VARCHAR(255) NOT NULL,
-    report_description TEXT NOT NULL,
-    severity VARCHAR(50) CHECK (severity IN ('Low', 'Medium', 'High', 'Critical')) DEFAULT 'Medium',
-    category VARCHAR(100) CHECK (category IN ('Service Quality', 'Wait Times', 'Cleanliness', 'Staff Conduct', 'Equipment', 'Safety', 'Other')) DEFAULT 'Other',
-    status VARCHAR(50) CHECK (status IN ('Open', 'In Progress', 'Under Review', 'Resolved', 'Closed', 'Appeal')) DEFAULT 'Open',
-    priority VARCHAR(50) CHECK (priority IN ('Low', 'Medium', 'High', 'Urgent')) DEFAULT 'Medium',
-    assigned_to VARCHAR(255),
-    investigation_notes TEXT,
-    outcome VARCHAR(255),
-    resolution_date DATE,
-    attachments TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes for reports tables
-CREATE INDEX IF NOT EXISTS idx_employee_reports_status ON employee_reports(status);
-CREATE INDEX IF NOT EXISTS idx_employee_reports_severity ON employee_reports(severity);
-CREATE INDEX IF NOT EXISTS idx_employee_reports_employee_id ON employee_reports(employee_id);
-CREATE INDEX IF NOT EXISTS idx_employee_reports_created ON employee_reports(created_at);
-CREATE INDEX IF NOT EXISTS idx_department_reports_status ON department_reports(status);
-CREATE INDEX IF NOT EXISTS idx_department_reports_severity ON department_reports(severity);
-CREATE INDEX IF NOT EXISTS idx_department_reports_department_id ON department_reports(department_id);
-CREATE INDEX IF NOT EXISTS idx_department_reports_created ON department_reports(created_at);
-
--- Activity log table for tracking complaint changes
-CREATE TABLE IF NOT EXISTS complaint_activity_log (
-    id SERIAL PRIMARY KEY,
-    activity_type VARCHAR(50) CHECK (activity_type IN ('Created', 'Updated', 'Deleted', 'Status Changed')) DEFAULT 'Created',
-    report_type VARCHAR(50) CHECK (report_type IN ('employee', 'department')) NOT NULL,
-    report_id INTEGER NOT NULL,
-    report_title VARCHAR(255),
-    employee_or_department_name VARCHAR(255),
-    severity VARCHAR(50),
-    action_detail TEXT,
-    created_by VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_complaint_activity_created ON complaint_activity_log(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_complaint_activity_type ON complaint_activity_log(activity_type);
-CREATE INDEX IF NOT EXISTS idx_complaint_activity_severity ON complaint_activity_log(severity);
 
 -- Notifications Table
 CREATE TABLE IF NOT EXISTS notifications (

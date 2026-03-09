@@ -866,87 +866,69 @@ app.delete('/api/alerts/:id', async (req, res) => {
     }
 });
 
-// ===== REPORTS API =====
-// Get system activities
-app.get('/api/reports/activities', async (req, res) => {
-    try {
-        const limit = req.query.limit || 50;
-        const result = await pool.query(`
-            SELECT * FROM system_activity 
-            ORDER BY created_at DESC 
-            LIMIT $1
-        `, [limit]);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get report snapshots for charts
-app.get('/api/reports/snapshots', async (req, res) => {
-    try {
-        const months = req.query.months || 6;
-        const result = await pool.query(`
-            SELECT * FROM report_snapshots 
-            WHERE snapshot_date >= CURRENT_DATE - INTERVAL '${months} months'
-            ORDER BY snapshot_date ASC
-        `);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get department statistics
-app.get('/api/reports/departments', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT ds.*, d.department_name 
-            FROM department_stats ds
-            JOIN departments d ON ds.department_id = d.department_id
-            WHERE ds.stat_date = CURRENT_DATE
-            ORDER BY ds.patient_count DESC
-        `);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get summary statistics
-app.get('/api/reports/summary', async (req, res) => {
-    try {
-        const patients = await pool.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = \'active\') as active FROM patients');
-        const employees = await pool.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE employment_status = \'Active\') as active FROM employees');
-        const departments = await pool.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = \'Active\') as active FROM departments');
-        const devices = await pool.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = \'online\') as online FROM devices');
-        const alerts = await pool.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE severity = \'critical\' AND status = \'active\') as critical FROM alerts');
-        
-        res.json({
-            patients: patients.rows[0],
-            employees: employees.rows[0],
-            departments: departments.rows[0],
-            devices: devices.rows[0],
-            alerts: alerts.rows[0]
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // ===== DASHBOARD API =====
 // Get dashboard summary (optimized single endpoint)
 app.get('/api/dashboard/summary', async (req, res) => {
     try {
-        // Return mock dashboard summary data
+        // Get total patients and active patients
+        const patientsResult = await pool.query(
+            `SELECT COUNT(*) as total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active 
+             FROM patients`
+        );
+        const patientsData = patientsResult.rows[0];
+        
+        // Get total employees and active employees
+        const employeesResult = await pool.query(
+            `SELECT COUNT(*) as total, SUM(CASE WHEN employment_status = 'Active' THEN 1 ELSE 0 END) as active 
+             FROM employees`
+        );
+        const employeesData = employeesResult.rows[0];
+        
+        // Get total departments and active departments
+        const departmentsResult = await pool.query(
+            `SELECT COUNT(*) as total, SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) as active 
+             FROM departments`
+        );
+        const departmentsData = departmentsResult.rows[0];
+        
+        // Get total devices and device status
+        const devicesResult = await pool.query(
+            `SELECT COUNT(*) as total, SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) as online 
+             FROM devices`
+        );
+        const devicesData = devicesResult.rows[0];
+        
+        // Get critical alerts count
+        const alertsResult = await pool.query(
+            `SELECT COUNT(*) as total, SUM(CASE WHEN severity = 'critical' AND status = 'active' THEN 1 ELSE 0 END) as critical 
+             FROM alerts`
+        );
+        const alertsData = alertsResult.rows[0];
+        
         res.json({
-            patients: { total: 45, active: 38 },
-            employees: { total: 12, active: 10 },
-            departments: { total: 6, active: 5 },
-            devices: { total: 28, online: 24 },
-            alerts: { total: 7, critical: 2 }
+            patients: { 
+                total: parseInt(patientsData.total) || 0, 
+                active: parseInt(patientsData.active) || 0 
+            },
+            employees: { 
+                total: parseInt(employeesData.total) || 0, 
+                active: parseInt(employeesData.active) || 0 
+            },
+            departments: { 
+                total: parseInt(departmentsData.total) || 0, 
+                active: parseInt(departmentsData.active) || 0 
+            },
+            devices: { 
+                total: parseInt(devicesData.total) || 0, 
+                online: parseInt(devicesData.online) || 0 
+            },
+            alerts: { 
+                total: parseInt(alertsData.total) || 0, 
+                critical: parseInt(alertsData.critical) || 0 
+            }
         });
     } catch (err) {
+        console.error('Dashboard summary error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -956,57 +938,188 @@ app.get('/api/dashboard/activity', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
         
-        // Return mock recent activity data
-        const activities = [
-            {
-                id: 1,
-                type: 'patient_created',
-                title: 'New Patient Added',
-                description: 'Patient John Doe was added to the system',
-                timestamp: new Date(Date.now() - 1000 * 60 * 5),
-                icon: 'fas fa-user-plus',
-                color: '#10b981'
-            },
-            {
-                id: 2,
-                type: 'device_status',
-                title: 'Device Status Changed',
-                description: 'Device Monitor-01 is now online',
-                timestamp: new Date(Date.now() - 1000 * 60 * 15),
-                icon: 'fas fa-laptop',
-                color: '#3b82f6'
-            },
-            {
-                id: 3,
-                type: 'alert_created',
-                title: 'Critical Alert',
-                description: 'Patient temperature out of normal range',
-                timestamp: new Date(Date.now() - 1000 * 60 * 30),
-                icon: 'fas fa-exclamation-triangle',
-                color: '#ef4444'
-            },
-            {
-                id: 4,
-                type: 'staff_login',
-                title: 'Staff Login',
-                description: 'Admin user logged in',
-                timestamp: new Date(Date.now() - 1000 * 60 * 45),
-                icon: 'fas fa-sign-in-alt',
-                color: '#6366f1'
-            },
-            {
-                id: 5,
-                type: 'data_export',
-                title: 'Data Export',
-                description: 'Monthly report exported successfully',
-                timestamp: new Date(Date.now() - 1000 * 60 * 60),
-                icon: 'fas fa-download',
-                color: '#f59e0b'
-            }
-        ];
+        // Get recent audit logs
+        const result = await pool.query(
+            `SELECT id, admin_name, action, table_name, target_id, created_at 
+             FROM audit_logs 
+             ORDER BY created_at DESC 
+             LIMIT $1`,
+            [limit]
+        );
         
-        res.json(activities.slice(0, limit));
+        const activities = result.rows.map(log => {
+            let icon, color, type, title, description;
+            
+            // Determine activity type, icon, and color based on action and table
+            switch (log.action) {
+                case 'Create':
+                    type = `${log.table_name}_created`;
+                    icon = 'fas fa-plus-circle';
+                    color = '#10b981';
+                    title = `New ${log.table_name.charAt(0).toUpperCase() + log.table_name.slice(1)} Created`;
+                    description = `A new ${log.table_name} record was added to the system`;
+                    break;
+                case 'Update':
+                    type = `${log.table_name}_updated`;
+                    icon = 'fas fa-edit';
+                    color = '#3b82f6';
+                    title = `${log.table_name.charAt(0).toUpperCase() + log.table_name.slice(1)} Updated`;
+                    description = `${log.table_name} record #${log.target_id} was modified`;
+                    break;
+                case 'Delete':
+                    type = `${log.table_name}_deleted`;
+                    icon = 'fas fa-trash';
+                    color = '#ef4444';
+                    title = `${log.table_name.charAt(0).toUpperCase() + log.table_name.slice(1)} Deleted`;
+                    description = `${log.table_name} record #${log.target_id} was removed from the system`;
+                    break;
+                case 'Login':
+                    type = 'staff_login';
+                    icon = 'fas fa-sign-in-alt';
+                    color = '#6366f1';
+                    title = 'Staff Login';
+                    description = `${log.admin_name} logged into the system`;
+                    break;
+                case 'Logout':
+                    type = 'staff_logout';
+                    icon = 'fas fa-sign-out-alt';
+                    color = '#8b5cf6';
+                    title = 'Staff Logout';
+                    description = `${log.admin_name} logged out of the system`;
+                    break;
+                case 'View':
+                    type = 'data_view';
+                    icon = 'fas fa-eye';
+                    color = '#6b7280';
+                    title = 'Data Accessed';
+                    description = `${log.table_name} data was accessed`;
+                    break;
+                case 'Export':
+                    type = 'data_export';
+                    icon = 'fas fa-download';
+                    color = '#f59e0b';
+                    title = 'Data Export';
+                    description = `${log.table_name} data was exported`;
+                    break;
+                default:
+                    type = 'general_activity';
+                    icon = 'fas fa-info-circle';
+                    color = '#9ca3af';
+                    title = log.action;
+                    description = `Activity in ${log.table_name}`;
+            }
+            
+            return {
+                id: log.id,
+                type: type,
+                title: title,
+                description: description,
+                user: log.admin_name,
+                timestamp: log.created_at,
+                icon: icon,
+                color: color
+            };
+        });
+        
+        res.json(activities);
     } catch (err) {
+        console.error('Activity loading error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===== AUDIT LOGS VIEW API =====
+app.get('/api/audit-logs', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+        const action = req.query.action || null;
+        const table = req.query.table || null;
+        
+        let query = 'SELECT * FROM audit_logs WHERE 1=1';
+        const params = [];
+        
+        // Apply filters
+        if (action) {
+            query += ` AND action = $${params.length + 1}`;
+            params.push(action);
+        }
+        
+        if (table) {
+            query += ` AND table_name = $${params.length + 1}`;
+            params.push(table);
+        }
+        
+        // Get total count
+        const countQuery = query.replace(/SELECT \*/, 'SELECT COUNT(*) as count');
+        const countResult = await pool.query(countQuery, params);
+        const total = parseInt(countResult.rows[0].count);
+        
+        // Get paginated results
+        query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(limit, offset);
+        
+        const result = await pool.query(query, params);
+        
+        res.json({
+            total: total,
+            count: result.rows.length,
+            limit: limit,
+            offset: offset,
+            logs: result.rows
+        });
+    } catch (err) {
+        console.error('Audit logs error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===== STAFF STATISTICS API =====
+app.get('/api/staff-statistics', async (req, res) => {
+    try {
+        // Total staff by job title
+        const byJobTitle = await pool.query(
+            `SELECT job_title, COUNT(*) as count, 
+                    SUM(CASE WHEN employment_status = 'Active' THEN 1 ELSE 0 END) as active_count
+             FROM employees 
+             WHERE job_title IS NOT NULL
+             GROUP BY job_title 
+             ORDER BY count DESC`
+        );
+        
+        // Total staff by department
+        const byDepartment = await pool.query(
+            `SELECT d.department_name, COUNT(e.employee_id) as count,
+                    SUM(CASE WHEN e.employment_status = 'Active' THEN 1 ELSE 0 END) as active_count
+             FROM employees e
+             RIGHT JOIN departments d ON e.department_id = d.department_id
+             GROUP BY d.department_id, d.department_name
+             ORDER BY count DESC`
+        );
+        
+        // Employment type distribution
+        const byEmploymentType = await pool.query(
+            `SELECT employment_type, COUNT(*) as count
+             FROM employees 
+             WHERE employment_type IS NOT NULL
+             GROUP BY employment_type`
+        );
+        
+        // Employment status distribution
+        const byEmploymentStatus = await pool.query(
+            `SELECT employment_status, COUNT(*) as count
+             FROM employees 
+             GROUP BY employment_status`
+        );
+        
+        res.json({
+            by_job_title: byJobTitle.rows,
+            by_department: byDepartment.rows,
+            by_employment_type: byEmploymentType.rows,
+            by_employment_status: byEmploymentStatus.rows
+        });
+    } catch (err) {
+        console.error('Staff statistics error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -1327,9 +1440,6 @@ app.get('/departments', (req, res) => res.render('departments', { title: 'Depart
 
 // Settings
 app.get('/settings', (req, res) => res.render('settings', { title: 'Settings' }));
-
-// Reports
-app.get('/reports', (req, res) => res.render('reports', { title: 'Reports' }));
 
 // Audit Logs
 app.get('/audit-logs', (req, res) => res.render('audit-logs', { title: 'Audit Logs' }));
@@ -2056,593 +2166,6 @@ app.get('/api/audit-logs/export/csv', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
-// ===== EMPLOYEE REPORTS API =====
-// Get all employee reports with filters
-app.get('/api/employee-reports', async (req, res) => {
-    const { status, severity, employee_id, search, page = 1, limit = 10 } = req.query;
-    try {
-        let query = 'SELECT * FROM employee_reports WHERE 1=1';
-        const params = [];
-        let paramIndex = 1;
-
-        if (status) {
-            query += ` AND status = $${paramIndex}`;
-            params.push(status);
-            paramIndex++;
-        }
-        if (severity) {
-            query += ` AND severity = $${paramIndex}`;
-            params.push(severity);
-            paramIndex++;
-        }
-        if (employee_id) {
-            query += ` AND employee_id = $${paramIndex}`;
-            params.push(employee_id);
-            paramIndex++;
-        }
-        if (search) {
-            query += ` AND (report_title ILIKE $${paramIndex} OR report_description ILIKE $${paramIndex} OR employee_name ILIKE $${paramIndex})`;
-            params.push(`%${search}%`);
-            paramIndex++;
-        }
-
-        query += ' ORDER BY created_at DESC';
-
-        const offset = (page - 1) * limit;
-        const countResult = await pool.query(query, params);
-        const total = countResult.rows.length;
-
-        query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(limit, offset);
-
-        const result = await pool.query(query, params);
-        res.json({ success: true, data: result.rows, total, page, limit });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Get single employee report
-app.get('/api/employee-reports/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const result = await pool.query('SELECT * FROM employee_reports WHERE id = $1', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Report not found' });
-        }
-        res.json({ success: true, data: result.rows[0] });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Submit new employee report
-app.post('/api/employee-reports', async (req, res) => {
-    const {
-        employee_id, employee_name, department_id, department_name, reported_by, reported_by_email,
-        reported_by_type, report_title, report_description, severity, category, report_type
-    } = req.body;
-
-    try {
-        const result = await pool.query(
-            `INSERT INTO employee_reports 
-            (employee_id, employee_name, department_id, department_name, reported_by, reported_by_email,
-             reported_by_type, report_title, report_description, severity, category, report_type, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Open')
-            RETURNING *`,
-            [employee_id, employee_name, department_id, department_name, reported_by, reported_by_email,
-             reported_by_type, report_title, report_description, severity, category, report_type]
-        );
-
-        // Log to audit logs
-        logAudit('employee_reports', 'Create', result.rows[0].id, null, result.rows[0], reported_by);
-
-        res.json({ success: true, message: 'Report submitted successfully', data: result.rows[0] });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Update employee report status or details
-app.put('/api/employee-reports/:id', async (req, res) => {
-    const { id } = req.params;
-    const { status, assigned_to, investigation_notes, outcome, resolution_date } = req.body;
-
-    try {
-        const beforeResult = await pool.query('SELECT * FROM employee_reports WHERE id = $1', [id]);
-        if (beforeResult.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Report not found' });
-        }
-
-        const beforeState = beforeResult.rows[0];
-
-        let query = 'UPDATE employee_reports SET updated_at = CURRENT_TIMESTAMP';
-        const params = [];
-        let paramIndex = 1;
-
-        if (status) {
-            query += `, status = $${paramIndex}`;
-            params.push(status);
-            paramIndex++;
-        }
-        if (assigned_to) {
-            query += `, assigned_to = $${paramIndex}`;
-            params.push(assigned_to);
-            paramIndex++;
-        }
-        if (investigation_notes) {
-            query += `, investigation_notes = $${paramIndex}`;
-            params.push(investigation_notes);
-            paramIndex++;
-        }
-        if (outcome) {
-            query += `, outcome = $${paramIndex}`;
-            params.push(outcome);
-            paramIndex++;
-        }
-        if (resolution_date) {
-            query += `, resolution_date = $${paramIndex}`;
-            params.push(resolution_date);
-            paramIndex++;
-        }
-
-        query += ` WHERE id = $${paramIndex} RETURNING *`;
-        params.push(id);
-
-        const result = await pool.query(query, params);
-        logAudit('employee_reports', 'Update', id, beforeState, result.rows[0], 'Admin');
-
-        res.json({ success: true, message: 'Report updated successfully', data: result.rows[0] });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Delete employee report
-app.delete('/api/employee-reports/:id', async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const beforeResult = await pool.query('SELECT * FROM employee_reports WHERE id = $1', [id]);
-        if (beforeResult.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Report not found' });
-        }
-
-        const reportToDelete = beforeResult.rows[0];
-        await pool.query('DELETE FROM employee_reports WHERE id = $1', [id]);
-        logAudit('employee_reports', 'Delete', id, beforeResult.rows[0], null, 'Admin');
-
-        res.json({ success: true, message: 'Report deleted successfully' });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Get employee report statistics
-app.get('/api/employee-reports-stats/summary', async (req, res) => {
-    try {
-        const stats = await pool.query(`
-            SELECT 
-                COUNT(*) as total_reports,
-                SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) as open_reports,
-                SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved,
-                SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) as closed,
-                SUM(CASE WHEN severity = 'Critical' THEN 1 ELSE 0 END) as critical_reports,
-                SUM(CASE WHEN severity = 'High' THEN 1 ELSE 0 END) as high_reports
-            FROM employee_reports
-        `);
-
-        const byEmployee = await pool.query(`
-            SELECT employee_name, employee_id, COUNT(*) as report_count
-            FROM employee_reports
-            GROUP BY employee_id, employee_name
-            ORDER BY report_count DESC
-            LIMIT 10
-        `);
-
-        res.json({ success: true, data: { summary: stats.rows[0], by_employee: byEmployee.rows } });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// ===== DEPARTMENT REPORTS API =====
-// Get all department reports with filters
-app.get('/api/department-reports', async (req, res) => {
-    const { status, severity, department_id, search, page = 1, limit = 10 } = req.query;
-    try {
-        let query = 'SELECT * FROM department_reports WHERE 1=1';
-        const params = [];
-        let paramIndex = 1;
-
-        if (status) {
-            query += ` AND status = $${paramIndex}`;
-            params.push(status);
-            paramIndex++;
-        }
-        if (severity) {
-            query += ` AND severity = $${paramIndex}`;
-            params.push(severity);
-            paramIndex++;
-        }
-        if (department_id) {
-            query += ` AND department_id = $${paramIndex}`;
-            params.push(department_id);
-            paramIndex++;
-        }
-        if (search) {
-            query += ` AND (report_title ILIKE $${paramIndex} OR report_description ILIKE $${paramIndex} OR department_name ILIKE $${paramIndex})`;
-            params.push(`%${search}%`);
-            paramIndex++;
-        }
-
-        query += ' ORDER BY created_at DESC';
-
-        const offset = (page - 1) * limit;
-        const countResult = await pool.query(query, params);
-        const total = countResult.rows.length;
-
-        query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(limit, offset);
-
-        const result = await pool.query(query, params);
-        res.json({ success: true, data: result.rows, total, page, limit });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Get single department report
-app.get('/api/department-reports/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const result = await pool.query('SELECT * FROM department_reports WHERE id = $1', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Report not found' });
-        }
-        res.json({ success: true, data: result.rows[0] });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Submit new department report
-app.post('/api/department-reports', async (req, res) => {
-    const {
-        department_id, department_name, reported_by, reported_by_email, reported_by_type,
-        report_title, report_description, severity, category, report_type
-    } = req.body;
-
-    try {
-        const result = await pool.query(
-            `INSERT INTO department_reports 
-            (department_id, department_name, reported_by, reported_by_email, reported_by_type,
-             report_title, report_description, severity, category, report_type, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Open')
-            RETURNING *`,
-            [department_id, department_name, reported_by, reported_by_email, reported_by_type,
-             report_title, report_description, severity, category, report_type]
-        );
-
-        // Log to audit logs
-        logAudit('department_reports', 'Create', result.rows[0].id, null, result.rows[0], reported_by);
-
-        res.json({ success: true, message: 'Report submitted successfully', data: result.rows[0] });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Update department report status or details
-app.put('/api/department-reports/:id', async (req, res) => {
-    const { id } = req.params;
-    const { status, assigned_to, investigation_notes, outcome, resolution_date } = req.body;
-
-    try {
-        const beforeResult = await pool.query('SELECT * FROM department_reports WHERE id = $1', [id]);
-        if (beforeResult.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Report not found' });
-        }
-
-        const beforeState = beforeResult.rows[0];
-
-        let query = 'UPDATE department_reports SET updated_at = CURRENT_TIMESTAMP';
-        const params = [];
-        let paramIndex = 1;
-
-        if (status) {
-            query += `, status = $${paramIndex}`;
-            params.push(status);
-            paramIndex++;
-        }
-        if (assigned_to) {
-            query += `, assigned_to = $${paramIndex}`;
-            params.push(assigned_to);
-            paramIndex++;
-        }
-        if (investigation_notes) {
-            query += `, investigation_notes = $${paramIndex}`;
-            params.push(investigation_notes);
-            paramIndex++;
-        }
-        if (outcome) {
-            query += `, outcome = $${paramIndex}`;
-            params.push(outcome);
-            paramIndex++;
-        }
-        if (resolution_date) {
-            query += `, resolution_date = $${paramIndex}`;
-            params.push(resolution_date);
-            paramIndex++;
-        }
-
-        query += ` WHERE id = $${paramIndex} RETURNING *`;
-        params.push(id);
-
-        const result = await pool.query(query, params);
-        logAudit('department_reports', 'Update', id, beforeState, result.rows[0], 'Admin');
-
-        res.json({ success: true, message: 'Report updated successfully', data: result.rows[0] });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Delete department report
-app.delete('/api/department-reports/:id', async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const beforeResult = await pool.query('SELECT * FROM department_reports WHERE id = $1', [id]);
-        if (beforeResult.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Report not found' });
-        }
-
-        const reportToDelete = beforeResult.rows[0];
-        await pool.query('DELETE FROM department_reports WHERE id = $1', [id]);
-        logAudit('department_reports', 'Delete', id, beforeResult.rows[0], null, 'Admin');
-
-        res.json({ success: true, message: 'Report deleted successfully' });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Get department report statistics
-app.get('/api/department-reports-stats/summary', async (req, res) => {
-    try {
-        const stats = await pool.query(`
-            SELECT 
-                COUNT(*) as total_reports,
-                SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) as open_reports,
-                SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved,
-                SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) as closed,
-                SUM(CASE WHEN severity = 'Critical' THEN 1 ELSE 0 END) as critical_reports,
-                SUM(CASE WHEN severity = 'High' THEN 1 ELSE 0 END) as high_reports
-            FROM department_reports
-        `);
-
-        const byDepartment = await pool.query(`
-            SELECT department_name, department_id, COUNT(*) as report_count
-            FROM department_reports
-            GROUP BY department_id, department_name
-            ORDER BY report_count DESC
-            LIMIT 10
-        `);
-
-        res.json({ success: true, data: { summary: stats.rows[0], by_department: byDepartment.rows } });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Initialize sample data if tables are empty
-async function initializeSampleData() {
-    try {
-        // Check if employee_reports table has data
-        const empCount = await pool.query('SELECT COUNT(*) FROM employee_reports');
-        if (empCount.rows[0].count === '0') {
-            console.log('🌱 Seeding employee reports...');
-            const employeeSamples = [
-                {
-                    employee_id: 1,
-                    employee_name: 'John Doe',
-                    department_id: 1,
-                    department_name: 'Cardiology',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Patient',
-                    report_title: 'Professional Conduct Issue',
-                    report_description: 'Employee displayed unprofessional behavior during patient consultation.',
-                    severity: 'High',
-                    category: 'Conduct',
-                    status: 'Open',
-                    priority: 'High',
-                    assigned_to: 'HR Manager'
-                },
-                {
-                    employee_id: 2,
-                    employee_name: 'Jane Smith',
-                    department_id: 2,
-                    department_name: 'Emergency',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Patient',
-                    report_title: 'Performance Concern',
-                    report_description: 'Slow patient response time and lack of communication.',
-                    severity: 'Medium',
-                    category: 'Performance',
-                    status: 'In Progress',
-                    priority: 'Medium',
-                    assigned_to: 'Department Head'
-                },
-                {
-                    employee_id: 3,
-                    employee_name: 'Michael Johnson',
-                    department_id: 3,
-                    department_name: 'ICU',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Patient',
-                    report_title: 'Patient Care Issue',
-                    report_description: 'Inadequate patient care documentation and follow-up.',
-                    severity: 'Critical',
-                    category: 'Patient Care',
-                    status: 'Under Review',
-                    priority: 'Urgent',
-                    assigned_to: 'Compliance Officer'
-                },
-                {
-                    employee_id: 4,
-                    employee_name: 'Sarah Williams',
-                    department_id: 1,
-                    department_name: 'Cardiology',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Staff',
-                    report_title: 'Communication Problem',
-                    report_description: 'Difficulty communicating with colleagues and patients.',
-                    severity: 'Low',
-                    category: 'Communication',
-                    status: 'Resolved',
-                    priority: 'Low',
-                    assigned_to: 'Training Coordinator'
-                },
-                {
-                    employee_id: 5,
-                    employee_name: 'Robert Brown',
-                    department_id: 2,
-                    department_name: 'Emergency',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Staff',
-                    report_title: 'Safety Violation',
-                    report_description: 'Non-compliance with safety protocols during procedures.',
-                    severity: 'Critical',
-                    category: 'Safety',
-                    status: 'Open',
-                    priority: 'Urgent',
-                    assigned_to: 'Safety Officer'
-                }
-            ];
-            
-            for (const sample of employeeSamples) {
-                await pool.query(
-                    `INSERT INTO employee_reports (employee_id, employee_name, department_id, department_name, reported_by, reported_by_email, reported_by_type, report_title, report_description, severity, category, status, priority, assigned_to)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-                    [sample.employee_id, sample.employee_name, sample.department_id, sample.department_name, sample.reported_by, sample.reported_by_email, sample.reported_by_type, sample.report_title, sample.report_description, sample.severity, sample.category, sample.status, sample.priority, sample.assigned_to]
-                );
-            }
-            console.log('✅ Employee reports seeded');
-        }
-        
-        // Check if department_reports table has data
-        const deptCount = await pool.query('SELECT COUNT(*) FROM department_reports');
-        if (deptCount.rows[0].count === '0') {
-            console.log('🌱 Seeding department reports...');
-            const departmentSamples = [
-                {
-                    department_id: 1,
-                    department_name: 'Cardiology',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Patient',
-                    report_title: 'Long Wait Times',
-                    report_description: 'Patients experiencing excessive wait times for appointments.',
-                    severity: 'High',
-                    category: 'Wait Times',
-                    status: 'Open',
-                    priority: 'High',
-                    assigned_to: 'Department Manager'
-                },
-                {
-                    department_id: 2,
-                    department_name: 'Emergency',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Patient',
-                    report_title: 'Cleanliness Concerns',
-                    report_description: 'Multiple reports of unclean facilities and inadequate sanitation.',
-                    severity: 'Critical',
-                    category: 'Cleanliness',
-                    status: 'In Progress',
-                    priority: 'Urgent',
-                    assigned_to: 'Facilities Manager'
-                },
-                {
-                    department_id: 3,
-                    department_name: 'ICU',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Staff',
-                    report_title: 'Staff Conduct Issue',
-                    report_description: 'Reports of unprofessional staff interactions.',
-                    severity: 'Medium',
-                    category: 'Staff Conduct',
-                    status: 'Under Review',
-                    priority: 'Medium',
-                    assigned_to: 'HR Manager'
-                },
-                {
-                    department_id: 4,
-                    department_name: 'Radiology',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Patient',
-                    report_title: 'Equipment Issues',
-                    report_description: 'Outdated equipment causing delays and poor image quality.',
-                    severity: 'High',
-                    category: 'Equipment',
-                    status: 'Open',
-                    priority: 'High',
-                    assigned_to: 'Technical Director'
-                },
-                {
-                    department_id: 5,
-                    department_name: 'Pediatrics',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Staff',
-                    report_title: 'Service Quality Issue',
-                    report_description: 'Overall decline in service quality and patient satisfaction.',
-                    severity: 'Medium',
-                    category: 'Service Quality',
-                    status: 'Resolved',
-                    priority: 'Medium',
-                    assigned_to: 'QA Officer'
-                },
-                {
-                    department_id: 1,
-                    department_name: 'Cardiology',
-                    reported_by: 'Patient Admin',
-                    reported_by_email: 'admin@hospital.com',
-                    reported_by_type: 'Management',
-                    report_title: 'Safety Protocol Deviation',
-                    report_description: 'Staff not following established safety protocols consistently.',
-                    severity: 'Critical',
-                    category: 'Safety',
-                    status: 'Open',
-                    priority: 'Urgent',
-                    assigned_to: 'Safety Officer'
-                }
-            ];
-            
-            for (const sample of departmentSamples) {
-                await pool.query(
-                    `INSERT INTO department_reports (department_id, department_name, reported_by, reported_by_email, reported_by_type, report_title, report_description, severity, category, status, priority, assigned_to)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-                    [sample.department_id, sample.department_name, sample.reported_by, sample.reported_by_email, sample.reported_by_type, sample.report_title, sample.report_description, sample.severity, sample.category, sample.status, sample.priority, sample.assigned_to]
-                );
-            }
-            console.log('✅ Department reports seeded');
-        }
-    } catch (err) {
-        console.error('❌ Error seeding sample data:', err.message);
-    }
-}
 
 // ===== NOTIFICATIONS API =====
 // Get all notifications

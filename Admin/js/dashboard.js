@@ -451,20 +451,30 @@ function closeNotificationPanel() {
     }
 }
 
-// Load notifications from backend or use sample data
+// Load notifications from backend activity data
 async function loadNotifications() {
     try {
-        // Try to fetch from backend
-        const response = await fetch(`${API_BASE}/notifications`);
+        // Fetch activity from backend
+        const response = await fetch(`${API_BASE}/dashboard/activity?limit=50`);
         if (response.ok) {
-            notificationsList = await response.json();
+            const activities = await response.json();
+            // Convert activities to notification format
+            notificationsList = activities.map(activity => ({
+                id: activity.id,
+                title: activity.title,
+                message: activity.description,
+                type: activity.type.split('_')[activity.type.split('_').length - 1], // Extract action type (created, updated, deleted)
+                icon: activity.icon,
+                timestamp: new Date(activity.timestamp),
+                read: false,
+                category: 'System'
+            }));
         } else {
-            // Use sample notifications if backend unavailable
-            notificationsList = getSampleNotifications();
+            notificationsList = [];
         }
     } catch (error) {
-        console.log('Using sample notifications (backend unavailable):', error.message);
-        notificationsList = getSampleNotifications();
+        console.log('Loading notifications from activity data:', error.message);
+        notificationsList = [];
     }
     
     updateNotificationUI();
@@ -636,16 +646,31 @@ function clearAllNotifications() {
     }
 }
 
-// Start listening for new notifications (polling)
+// Start listening for new notifications (by polling activities)
 function startNotificationListener() {
     let lastCheckTime = new Date();
     
-    // Poll for new notifications every 10 seconds
+    // Poll for new activities/notifications every 10 seconds
     setInterval(async () => {
         try {
-            const response = await fetch(`${API_BASE}/notifications/new?since=${lastCheckTime.toISOString()}`);
+            const response = await fetch(`${API_BASE}/dashboard/activity?limit=50`);
             if (response.ok) {
-                const newNotifications = await response.json();
+                const activities = await response.json();
+                const newActivities = activities.map(activity => ({
+                    id: activity.id,
+                    title: activity.title,
+                    message: activity.description,
+                    type: activity.type.split('_')[activity.type.split('_').length - 1],
+                    icon: activity.icon,
+                    timestamp: new Date(activity.timestamp),
+                    read: false,
+                    category: 'System'
+                }));
+                
+                // Check for new notifications
+                const existingIds = notificationsList.map(n => n.id);
+                const newNotifications = newActivities.filter(n => !existingIds.includes(n.id));
+                
                 if (newNotifications && newNotifications.length > 0) {
                     // Add new notifications to the list
                     notificationsList = [...newNotifications, ...notificationsList];
@@ -804,5 +829,7 @@ function showNotificationToast(title, message, type) {
         toast.remove();
     }, 5000);
 }
+
+
 
 // End of dashboard functions
