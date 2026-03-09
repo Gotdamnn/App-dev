@@ -98,9 +98,6 @@
         </div>
     </div>
 
-    <script src="../js/dashboard.js"></script>
-    <script src="../js/employees.js"></script>
-
     <!-- Add Employee Modal -->
     <div id="addEmployeeModal" class="modal">
         <div class="modal-content modal-large">
@@ -382,7 +379,7 @@
                 <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
             </div>
             <div id="confirmMessage" style="padding: 20px; text-align: center; font-size: 1rem; color: #374151;">
-                Are you sure you want to delete this employee?
+                Are you sure you want to permanently delete this employee?
             </div>
             <div class="form-actions" style="padding: 0 20px 20px 20px; display: flex; gap: 12px;">
                 <button type="button" class="btn-cancel" onclick="closeConfirmModal()" style="flex: 1;">Cancel</button>
@@ -510,5 +507,70 @@
             </div>
         </div>
     </div>
+
+    <!-- Assign Role Modal -->
+    <div id="assignRoleModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Assign Staff Role</h2>
+                <button class="modal-close" data-modal="assignRoleModal">&times;</button>
+            </div>
+            <form id="assignRoleForm">
+                <input type="hidden" id="assignRoleEmployeeId">
+                
+                <div style="padding: 20px;">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Employee Name</label>
+                        <div id="assignRoleEmployeeName" style="padding: 12px; background: #f3f4f6; border-radius: 6px; color: #374151;">Loading...</div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Email</label>
+                        <div id="assignRoleEmployeeEmail" style="padding: 12px; background: #f3f4f6; border-radius: 6px; color: #666; font-size: 0.9rem;">Loading...</div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="assignRoleSelect" style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Select Role *</label>
+                        <select id="assignRoleSelect" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;" required>
+                            <option value="">-- Select a Role --</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Admin Manager">Admin Manager</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="assignRoleDepartment" style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Department</label>
+                        <select id="assignRoleDepartment" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
+                            <option value="">-- Select Department --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="assignRoleStatus" style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Status</label>
+                        <select id="assignRoleStatus" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Disabled">Disabled</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9rem; color: #1e40af;">
+                        <strong>Note:</strong> This will create/update a staff record for this employee with the selected role in the Staff Management system.
+                    </div>
+                </div>
+
+                <div class="form-actions" style="padding: 0 20px 20px 20px; display: flex; gap: 10px;">
+                    <button type="button" class="btn-cancel" data-modal="assignRoleModal">Cancel</button>
+                    <button type="button" class="btn-delete" onclick="removeRoleAssignment()" style="background: #ef4444; color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; flex: 1;">Remove Role</button>
+                    <button type="submit" class="btn-save" style="flex: 1;">Assign Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+    <script src="../js/employees.js"></script>
 </body>
 </html>

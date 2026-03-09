@@ -13,11 +13,7 @@ CREATE TABLE IF NOT EXISTS admins (
 -- Password hash for all: 'Carlzabala@123' (bcrypt)
 INSERT INTO admins (email, password, name) VALUES
     ('admin@patientpulse.com', '$2b$10$4kQDrmf4l7GtEI0fel0XuOjXl4By29DO3KNC75fv3tVjTkjxk03IK', 'Admin User'),
-    ('john.admin@hospital.com', '$2b$10$4kQDrmf4l7GtEI0fel0XuOjXl4By29DO3KNC75fv3tVjTkjxk03IK', 'John Administrator'),
-    ('sarah.manager@hospital.com', '$2b$10$4kQDrmf4l7GtEI0fel0XuOjXl4By29DO3KNC75fv3tVjTkjxk03IK', 'Sarah Manager'),
-    ('michael.johnson@hospital.com', '$2b$10$4kQDrmf4l7GtEI0fel0XuOjXl4By29DO3KNC75fv3tVjTkjxk03IK', 'Michael Johnson'),
-    ('emily.davis@hospital.com', '$2b$10$4kQDrmf4l7GtEI0fel0XuOjXl4By29DO3KNC75fv3tVjTkjxk03IK', 'Emily Davis'),
-    ('robert.wilson@hospital.com', '$2b$10$4kQDrmf4l7GtEI0fel0XuOjXl4By29DO3KNC75fv3tVjTkjxk03IK', 'Robert Wilson')
+   
 ON CONFLICT (email) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS patients (
@@ -419,11 +415,7 @@ CREATE TABLE IF NOT EXISTS staff (
 -- Insert default staff members
 INSERT INTO staff (name, email, role, department, status) VALUES
     ('Admin User', 'admin@patientpulse.com', 'Super Admin', 'Administration', 'Active'),
-    ('John Administrator', 'john.admin@hospital.com', 'Super Admin', 'Administration', 'Active'),
-    ('Sarah Manager', 'sarah.manager@hospital.com', 'Admin', 'IT', 'Active'),
-    ('Michael Johnson', 'michael.johnson@hospital.com', 'Manager', 'HR', 'Active'),
-    ('Emily Davis', 'emily.davis@hospital.com', 'Supervisor', 'Nursing', 'Active'),
-    ('Robert Wilson', 'robert.wilson@hospital.com', 'Admin', 'Medical Records', 'Inactive')
+   
 ON CONFLICT (email) DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_staff_email ON staff(email);
@@ -573,12 +565,7 @@ INSERT INTO admin_roles (admin_id, role_id, assigned_by)
 SELECT a.id, r.role_id, 'System'
 FROM admins a, roles r
 WHERE (
-    (a.email = 'admin@patientpulse.com' AND r.role_name = 'Super Admin') OR
-    (a.email = 'john.admin@hospital.com' AND r.role_name = 'Super Admin') OR
-    (a.email = 'sarah.manager@hospital.com' AND r.role_name = 'Admin') OR
-    (a.email = 'michael.johnson@hospital.com' AND r.role_name = 'Manager') OR
-    (a.email = 'emily.davis@hospital.com' AND r.role_name = 'Supervisor') OR
-    (a.email = 'robert.wilson@hospital.com' AND r.role_name = 'Admin')
+    (a.email = 'admin@patientpulse.com' AND r.role_name = 'Super Admin') 
 )
 ON CONFLICT (admin_id, role_id) DO NOTHING;
 

@@ -196,13 +196,153 @@ async function ensureNotificationsTable() {
     }
 }
 
+// Ensure permissions table exists
+async function ensurePermissionsTable() {
+    const client = await pool.connect();
+    try {
+        const checkSQL = `
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_name = 'permissions'
+            ) as table_exists;
+        `;
+        const result = await client.query(checkSQL);
+        
+        if (!result.rows[0].table_exists) {
+            const createSQL = `
+                CREATE TABLE IF NOT EXISTS permissions (
+                    permission_id SERIAL PRIMARY KEY,
+                    permission_name VARCHAR(255) NOT NULL,
+                    permission_key VARCHAR(100) UNIQUE NOT NULL,
+                    description TEXT,
+                    category VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_permissions_key ON permissions(permission_key);
+                CREATE INDEX IF NOT EXISTS idx_permissions_category ON permissions(category);
+            `;
+            
+            await client.query(createSQL);
+            
+            // Insert default permissions
+            const insertSQL = `
+                INSERT INTO permissions (permission_name, permission_key, description, category) VALUES
+                    ('View Patient', 'view_patient', 'View patient information', 'Patient'),
+                    ('Edit Patient', 'edit_patient', 'Edit patient information', 'Patient'),
+                    ('Delete Patient', 'delete_patient', 'Delete patient records', 'Patient'),
+                    ('View Device', 'view_device', 'View device information', 'Device'),
+                    ('Edit Device', 'edit_device', 'Edit device information', 'Device'),
+                    ('Delete Device', 'delete_device', 'Delete device records', 'Device'),
+                    ('View Reports', 'view_reports', 'View system reports', 'Reports'),
+                    ('Generate Reports', 'generate_reports', 'Generate new reports', 'Reports'),
+                    ('Add Staff', 'add_staff', 'Add new staff members', 'Staff'),
+                    ('Edit Staff', 'edit_staff', 'Edit staff information', 'Staff'),
+                    ('Delete Staff', 'delete_staff', 'Delete staff members', 'Staff'),
+                    ('Manage Permissions', 'manage_permissions', 'Manage role permissions', 'Admin')
+                ON CONFLICT (permission_key) DO NOTHING;
+            `;
+            
+            await client.query(insertSQL);
+            console.log('✅ Created permissions table');
+        } else {
+            console.log('✅ Permissions table already exists');
+        }
+        return true;
+    } catch (err) {
+        console.error('❌ Failed to ensure permissions table:', err.message);
+        return false;
+    } finally {
+        client.release();
+    }
+}
+
+// Ensure staff_permissions table exists
+async function ensureStaffPermissionsTable() {
+    const client = await pool.connect();
+    try {
+        const checkSQL = `
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_name = 'staff_permissions'
+            ) as table_exists;
+        `;
+        const result = await client.query(checkSQL);
+        
+        if (!result.rows[0].table_exists) {
+            const createSQL = `
+                CREATE TABLE IF NOT EXISTS staff_permissions (
+                    staff_permission_id SERIAL PRIMARY KEY,
+                    staff_id INTEGER NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+                    permission_id INTEGER NOT NULL REFERENCES permissions(permission_id) ON DELETE CASCADE,
+                    permission_type VARCHAR(20) CHECK (permission_type IN ('grant', 'revoke')) DEFAULT 'grant',
+                    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    granted_by VARCHAR(255),
+                    UNIQUE(staff_id, permission_id)
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_staff_permissions_staff_id ON staff_permissions(staff_id);
+                CREATE INDEX IF NOT EXISTS idx_staff_permissions_permission_id ON staff_permissions(permission_id);
+                CREATE INDEX IF NOT EXISTS idx_staff_permissions_type ON staff_permissions(permission_type);
+            `;
+            
+            await client.query(createSQL);
+            console.log('✅ Created staff_permissions table');
+        } else {
+            console.log('✅ Staff permissions table already exists');
+        }
+        return true;
+    } catch (err) {
+        console.error('❌ Failed to ensure staff_permissions table:', err.message);
+        return false;
+    } finally {
+        client.release();
+    }
+}
+
+// Sync admins to staff table
+async function syncAdminsToStaff() {
+    const client = await pool.connect();
+    try {
+        // Get all admins that don't have a staff record
+        const result = await client.query(`
+            SELECT a.id, a.name, a.email FROM admins a
+            LEFT JOIN staff s ON a.email = s.email
+            WHERE s.id IS NULL
+        `);
+        
+        const adminsToAdd = result.rows;
+        
+        if (adminsToAdd.length > 0) {
+            // Insert missing admins as staff members
+            for (const admin of adminsToAdd) {
+                await client.query(`
+                    INSERT INTO staff (name, email, role, department, status)
+                    VALUES ($1, $2, 'Admin', 'Administration', 'Active')
+                    ON CONFLICT (email) DO NOTHING
+                `, [admin.name, admin.email]);
+            }
+            console.log(`✅ Synced ${adminsToAdd.length} admins to staff table`);
+        } else {
+            console.log('✅ All admins already synced to staff table');
+        }
+    } catch (err) {
+        console.error('⚠️  Error syncing admins to staff:', err.message);
+    } finally {
+        client.release();
+    }
+}
+
 // Run all migrations
 async function runMigrations() {
     console.log('\n🔧 Starting database migrations...\n');
     
     try {
         await ensureStaffTable();
+        await ensurePermissionsTable();
+        await ensureStaffPermissionsTable();
         await ensureNotificationsTable();
+        await syncAdminsToStaff();
         await fixCreateNotificationFunction();
         
         console.log('\n✅ Database migrations completed successfully\n');
@@ -238,7 +378,13 @@ async function ensureStaffTable() {
                 ('Sarah Manager', 'sarah.manager@hospital.com', 'Admin', 'IT', 'Active'),
                 ('Michael Johnson', 'michael.johnson@hospital.com', 'Manager', 'HR', 'Active'),
                 ('Emily Davis', 'emily.davis@hospital.com', 'Supervisor', 'Nursing', 'Active'),
-                ('Robert Wilson', 'robert.wilson@hospital.com', 'Admin', 'Medical Records', 'Inactive')
+                ('Robert Wilson', 'robert.wilson@hospital.com', 'Admin', 'Medical Records', 'Inactive'),
+                ('Admin User', 'admin@patientpulse.com', 'Super Admin', 'Administration', 'Active'),
+                ('John Doe', 'john.doe@hospital.com', 'Manager', 'Cardiology', 'Active'),
+                ('Jane Smith', 'jane.smith@hospital.com', 'Supervisor', 'Nursing', 'Active'),
+                ('David Brown', 'david.brown@hospital.com', 'Manager', 'Surgery', 'Active'),
+                ('Lisa Anderson', 'lisa.anderson@hospital.com', 'Supervisor', 'Emergency', 'Active'),
+                ('Mark Taylor', 'mark.taylor@hospital.com', 'Admin', 'IT', 'Active')
             ON CONFLICT (email) DO NOTHING
         `);
         

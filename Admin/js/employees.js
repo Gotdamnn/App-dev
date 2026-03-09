@@ -9,10 +9,98 @@ let deleteEmployeeId = null;
 
 // Load employees and departments on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // DEBUG: Check if modal elements exist on page load
+    const modalOnLoad = document.getElementById('assignRoleModal');
+    const formOnLoad = document.getElementById('assignRoleForm');
+    console.log('Page Load Check:', {
+        assignRoleModal_exists: !!modalOnLoad,
+        assignRoleForm_exists: !!formOnLoad,
+        total_elements: document.querySelectorAll('*').length,
+        body_exists: !!document.body,
+        html_exists: !!document.documentElement
+    });
+    
+    // If modal doesn't exist, create it dynamically
+    if (!modalOnLoad) {
+        console.warn('Modal not found in HTML, creating dynamically...');
+        createAssignRoleModalDynamically();
+    }
+    
     loadDepartments();
     loadEmployees();
     setupEventListeners();
 });
+
+// Create assign role modal dynamically if it doesn't exist
+function createAssignRoleModalDynamically() {
+    const modalHTML = `
+    <!-- Assign Role Modal -->
+    <div id="assignRoleModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Assign Staff Role</h2>
+                <button class="modal-close" data-modal="assignRoleModal">&times;</button>
+            </div>
+            <form id="assignRoleForm">
+                <input type="hidden" id="assignRoleEmployeeId">
+                
+                <div style="padding: 20px;">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Employee Name</label>
+                        <div id="assignRoleEmployeeName" style="padding: 12px; background: #f3f4f6; border-radius: 6px; color: #374151;">Loading...</div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Email</label>
+                        <div id="assignRoleEmployeeEmail" style="padding: 12px; background: #f3f4f6; border-radius: 6px; color: #666; font-size: 0.9rem;">Loading...</div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="assignRoleSelect" style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Select Role *</label>
+                        <select id="assignRoleSelect" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;" required>
+                            <option value="">-- Select a Role --</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Admin Manager">Admin Manager</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="assignRoleDepartment" style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Department</label>
+                        <select id="assignRoleDepartment" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
+                            <option value="">-- Select Department --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="assignRoleStatus" style="font-weight: 600; margin-bottom: 8px; display: block; color: #374151;">Status</label>
+                        <select id="assignRoleStatus" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Disabled">Disabled</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9rem; color: #1e40af;">
+                        <strong>Note:</strong> This will create/update a staff record for this employee with the selected role in the Staff Management system.
+                    </div>
+                </div>
+
+                <div class="form-actions" style="padding: 0 20px 20px 20px; display: flex; gap: 10px;">
+                    <button type="button" class="btn-cancel" data-modal="assignRoleModal">Cancel</button>
+                    <button type="button" class="btn-delete" onclick="removeRoleAssignment()" style="background: #ef4444; color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; flex: 1;">Remove Role</button>
+                    <button type="submit" class="btn-save" style="flex: 1;">Assign Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    `;
+    
+    // Insert modal at the end of body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('Modal created dynamically');
+}
 
 // Setup event listeners
 function setupEventListeners() {
@@ -75,6 +163,15 @@ function setupEventListeners() {
             openLogoutModal();
         });
     }
+
+    // Assign Role form submission
+    const assignRoleForm = document.getElementById('assignRoleForm');
+    if (assignRoleForm) {
+        assignRoleForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await saveRoleAssignment();
+        });
+    }
 }
 
 // Load departments from API
@@ -84,7 +181,8 @@ async function loadDepartments() {
         if (!response.ok) {
             throw new Error('Failed to fetch departments');
         }
-        departments = await response.json();
+        const data = await response.json();
+        departments = data.departments || [];
         populateDepartmentDropdowns();
     } catch (error) {
         console.error('Error loading departments:', error);
@@ -173,13 +271,16 @@ function renderEmployees(employeeList) {
                 <td><span class="status-badge ${statusClass}">${employee.employment_status || 'N/A'}</span></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn view" title="View" onclick="viewEmployee(${employee.employee_id})">
+                        <button class="action-btn view" title="View Details" onclick="viewEmployee(${employee.employee_id})">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="action-btn edit" title="Edit" onclick="editEmployee(${employee.employee_id})">
+                        <button class="action-btn edit" title="Edit Employee" onclick="editEmployee(${employee.employee_id})">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="action-btn delete" title="Delete" onclick="deleteEmployee(${employee.employee_id})">
+                        <button class="action-btn assign" title="Assign/Remove Staff Role" onclick="assignRoleToEmployee(${employee.employee_id})">
+                            <i class="fas fa-user-shield"></i>
+                        </button>
+                        <button class="action-btn delete" title="Delete Employee" onclick="deleteEmployee(${employee.employee_id})">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -444,13 +545,13 @@ function deleteEmployee(id) {
 
     const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim();
     deleteEmployeeId = id;
-    document.getElementById('confirmMessage').textContent = `Are you sure you want to delete "${fullName}"? This action cannot be undone.`;
+    document.getElementById('confirmMessage').textContent = `Are you sure you want to permanently delete "${fullName}"? This action cannot be undone. The employee record will be completely removed from the system.`;
     
     const modal = document.getElementById('confirmModal');
     if (modal) modal.classList.add('show');
 }
 
-// Confirm delete
+// Confirm delete - deletes the entire employee
 async function confirmDelete() {
     if (!deleteEmployeeId) return;
 
@@ -508,6 +609,174 @@ function closeConfirmModal() {
 function closeViewEmployeeModal() {
     const modal = document.getElementById('viewEmployeeModal');
     if (modal) modal.classList.remove('show');
+}
+
+// ===== ROLE ASSIGNMENT FUNCTIONS =====
+// Assign role to employee - opens modal
+function assignRoleToEmployee(employeeId) {
+    const employee = employees.find(e => e.employee_id === employeeId);
+    if (!employee) {
+        showStatusModal('Error', 'Employee not found.', 'error');
+        return;
+    }
+
+    // Use setTimeout with longer delay to ensure DOM is fully rendered
+    setTimeout(() => {
+        // Get all modal and form elements
+        const assignRoleForm = document.getElementById('assignRoleForm');
+        const assignRoleEmployeeId = document.getElementById('assignRoleEmployeeId');
+        const assignRoleEmployeeName = document.getElementById('assignRoleEmployeeName');
+        const assignRoleEmployeeEmail = document.getElementById('assignRoleEmployeeEmail');
+        const assignRoleSelect = document.getElementById('assignRoleSelect');
+        const assignRoleStatus = document.getElementById('assignRoleStatus');
+        const assignRoleDepartment = document.getElementById('assignRoleDepartment');
+        const assignRoleModal = document.getElementById('assignRoleModal');
+
+        console.log('Checking for modal elements:', {
+            assignRoleForm: !!assignRoleForm,
+            assignRoleEmployeeId: !!assignRoleEmployeeId,
+            assignRoleEmployeeName: !!assignRoleEmployeeName,
+            assignRoleEmployeeEmail: !!assignRoleEmployeeEmail,
+            assignRoleSelect: !!assignRoleSelect,
+            assignRoleStatus: !!assignRoleStatus,
+            assignRoleDepartment: !!assignRoleDepartment,
+            assignRoleModal: !!assignRoleModal
+        });
+
+        // Validate all elements exist
+        const missingElements = [];
+        if (!assignRoleForm) missingElements.push('assignRoleForm');
+        if (!assignRoleEmployeeId) missingElements.push('assignRoleEmployeeId');
+        if (!assignRoleEmployeeName) missingElements.push('assignRoleEmployeeName');
+        if (!assignRoleEmployeeEmail) missingElements.push('assignRoleEmployeeEmail');
+        if (!assignRoleSelect) missingElements.push('assignRoleSelect');
+        if (!assignRoleStatus) missingElements.push('assignRoleStatus');
+        if (!assignRoleDepartment) missingElements.push('assignRoleDepartment');
+        if (!assignRoleModal) missingElements.push('assignRoleModal');
+
+        if (missingElements.length > 0) {
+            console.error('Missing elements:', missingElements);
+            console.error('Total elements in document:', document.querySelectorAll('*').length);
+            showStatusModal('Error', `Modal elements not found: ${missingElements.join(', ')}. Please refresh the page.`, 'error');
+            return;
+        }
+
+        const fullName = `${employee.first_name || ''} ${employee.middle_name || ''} ${employee.last_name || ''}`.replace(/\s+/g, ' ').trim();
+
+        // Set employee info
+        assignRoleEmployeeId.value = employee.employee_id;
+        assignRoleEmployeeName.textContent = fullName;
+        assignRoleEmployeeEmail.textContent = employee.email || 'No email';
+
+        // Reset form
+        assignRoleSelect.value = '';
+        assignRoleStatus.value = 'Active';
+        
+        // Set department if available
+        if (employee.department_id) {
+            assignRoleDepartment.value = employee.department_id;
+        } else {
+            assignRoleDepartment.value = '';
+        }
+
+        // Populate department dropdown if it exists
+        if (departments && departments.length > 0) {
+            const currentDept = assignRoleDepartment.value;
+            assignRoleDepartment.innerHTML = '<option value="">-- Select Department --</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.department_id;
+                option.textContent = dept.department_name;
+                assignRoleDepartment.appendChild(option);
+            });
+            if (currentDept) assignRoleDepartment.value = currentDept;
+        }
+
+        // Open modal
+        assignRoleModal.classList.add('show');
+    }, 100);
+}
+
+// Save role assignment
+async function saveRoleAssignment() {
+    const employeeId = document.getElementById('assignRoleEmployeeId').value;
+    const role = document.getElementById('assignRoleSelect').value;
+    const department = document.getElementById('assignRoleDepartment').value;
+    const status = document.getElementById('assignRoleStatus').value;
+
+    if (!role) {
+        showStatusModal('Error', 'Please select a role.', 'error');
+        return;
+    }
+
+    const employee = employees.find(e => e.employee_id === parseInt(employeeId));
+    if (!employee) {
+        showStatusModal('Error', 'Employee not found.', 'error');
+        return;
+    }
+
+    const roleData = {
+        employeeId: employeeId,
+        employeeName: `${employee.first_name || ''} ${employee.middle_name || ''} ${employee.last_name || ''}`.replace(/\s+/g, ' ').trim(),
+        employeeEmail: employee.email,
+        role: role,
+        department: department || employee.department_name || '',
+        status: status
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/employees/${employeeId}/assign-role`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(roleData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to assign role');
+        }
+
+        const result = await response.json();
+        closeModal('assignRoleModal');
+        showStatusModal('Success', `Role "${role}" has been assigned to ${roleData.employeeName} and they now appear in Staff Management!`, 'success');
+        loadEmployees();
+    } catch (error) {
+        console.error('Error assigning role:', error);
+        showStatusModal('Error', error.message || 'Failed to assign role. Please try again.', 'error');
+    }
+}
+
+// Remove role assignment
+async function removeRoleAssignment() {
+    const employeeId = document.getElementById('assignRoleEmployeeId').value;
+    const employee = employees.find(e => e.employee_id === parseInt(employeeId));
+    
+    if (!employee) {
+        showStatusModal('Error', 'Employee not found.', 'error');
+        return;
+    }
+
+    const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim();
+
+    try {
+        // Remove staff role assignment by calling the API to remove staff record
+        const response = await fetch(`${API_BASE}/staff/email/${encodeURIComponent(employee.email)}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok && response.status !== 404) {
+            throw new Error('Failed to remove staff assignment');
+        }
+
+        closeModal('assignRoleModal');
+        showStatusModal('Success', `Staff role assignment removed from ${fullName}. They are no longer in Staff Management.`, 'success');
+        loadEmployees();
+    } catch (error) {
+        console.error('Error removing staff assignment:', error);
+        showStatusModal('Error', 'Failed to remove staff assignment. Please try again.', 'error');
+    }
 }
 
 // Logout functions

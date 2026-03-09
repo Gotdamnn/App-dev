@@ -82,7 +82,8 @@ async function loadDepartments() {
         if (!response.ok) {
             throw new Error('Failed to fetch departments');
         }
-        departments = await response.json();
+        const data = await response.json();
+        departments = data.departments || [];
         renderDepartments(departments);
         updateStatsSummary();
         populateParentDepartmentDropdowns();

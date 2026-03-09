@@ -285,6 +285,16 @@
     color: #fff;
 }
 
+.action-btn.assign {
+    background: #fef08a;
+    color: #b45309;
+}
+
+.action-btn.assign:hover {
+    background: #f59e0b;
+    color: #fff;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .employee-controls {

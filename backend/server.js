@@ -19,6 +19,15 @@ app.use('/css', express.static(path.join(__dirname, '../Admin/css')));
 app.use('/js', express.static(path.join(__dirname, '../Admin/js')));
 app.use('/images', express.static(path.join(__dirname, '../images')));
 
+// Serve HTML files with no-cache headers
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+});
+app.use(express.static(path.join(__dirname, '../Admin/html')));
+
 // Favicon route - send empty response to prevent 404
 app.get('/favicon.ico', (req, res) => {
     res.status(204).end(); // No Content response
@@ -420,21 +429,21 @@ app.delete('/api/devices/:id', async (req, res) => {
 app.get('/api/departments', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT d.*, 
-                   COUNT(e.employee_id) as employee_count,
-                   head.first_name as head_first_name,
-                   head.last_name as head_last_name,
-                   parent.department_name as parent_department_name
+            SELECT 
+                d.department_id, 
+                d.department_name,
+                d.status,
+                d.budget_annual,
+                COUNT(e.employee_id) AS employee_count
             FROM departments d
-            LEFT JOIN employees e ON d.department_id = e.department_id
-            LEFT JOIN employees head ON d.department_head_id = head.employee_id
-            LEFT JOIN departments parent ON d.parent_department_id = parent.department_id
-            GROUP BY d.department_id, head.first_name, head.last_name, parent.department_name
+            LEFT JOIN employees e ON d.department_id = e.department_id AND e.employment_status = 'Active'
+            WHERE d.status = $1
+            GROUP BY d.department_id, d.department_name, d.status, d.budget_annual
             ORDER BY d.department_name
-        `);
-        res.json(result.rows);
+        `, ['Active']);
+        res.json({ success: true, departments: result.rows });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -714,6 +723,60 @@ app.delete('/api/employees/:id', async (req, res) => {
         }
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Assign role to employee - creates/updates staff record
+app.post('/api/employees/:id/assign-role', async (req, res) => {
+    const { employeeId, employeeName, employeeEmail, role, department, status } = req.body;
+    const assignedBy = req.headers['x-user-name'] || 'Admin';
+
+    try {
+        // Validate role
+        const validRoles = ['Super Admin', 'Admin', 'Manager', 'Supervisor', 'Admin Manager'];
+        if (!role || !validRoles.includes(role)) {
+            return res.status(400).json({ success: false, error: 'Invalid role selected' });
+        }
+
+        // Check if staff member with this email already exists
+        let staffResult = await pool.query('SELECT * FROM staff WHERE email = $1', [employeeEmail]);
+
+        let staffRecord;
+        if (staffResult.rows.length > 0) {
+            // Update existing staff record
+            const updateResult = await pool.query(
+                `UPDATE staff 
+                 SET name = $1, role = $2, department = $3, status = $4, updated_at = CURRENT_TIMESTAMP
+                 WHERE email = $5
+                 RETURNING *`,
+                [employeeName, role, department, status || 'Active', employeeEmail]
+            );
+            staffRecord = updateResult.rows[0];
+
+            // Log audit
+            logAudit('staff', 'Update Staff from Employee', staffRecord.id, staffResult.rows[0], staffRecord, assignedBy);
+        } else {
+            // Create new staff record
+            const insertResult = await pool.query(
+                `INSERT INTO staff (name, email, role, department, status)
+                 VALUES ($1, $2, $3, $4, $5)
+                 RETURNING *`,
+                [employeeName, employeeEmail, role, department, status || 'Active']
+            );
+            staffRecord = insertResult.rows[0];
+
+            // Log audit
+            logAudit('staff', 'Create', staffRecord.id, null, staffRecord, assignedBy);
+        }
+
+        res.json({
+            success: true,
+            message: `Role "${role}" assigned to ${employeeName}`,
+            staff: staffRecord
+        });
+    } catch (err) {
+        console.error('Error assigning role:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -1371,11 +1434,36 @@ app.get('/api/staff/permissions/all', checkPermission('manage_permissions'), asy
 });
 
 // Get staff member and their specific permissions
-app.get('/api/staff/:id/permissions', checkPermission('manage_permissions'), async (req, res) => {
+app.get('/api/staff/:id/permissions', async (req, res) => {
     try {
-        // Get staff details
-        const staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [req.params.id]);
-        if (staffResult.rows.length === 0) {
+        const { id } = req.params;
+        const { email } = req.query;
+        
+        // Get staff details - prioritize email lookup if provided, fallback to ID
+        // Try both staff and admins tables since admin records can have permissions
+        let staffResult;
+        
+        if (email) {
+            // Try email lookup first in staff table
+            staffResult = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
+            }
+        }
+        
+        // If not found by email or no email provided, try by ID
+        if (!staffResult || staffResult.rows.length === 0) {
+            staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [parseInt(id)]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE id = $1', [parseInt(id)]);
+            }
+        }
+        
+        if (!staffResult || staffResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Staff member not found' });
         }
         
@@ -1392,7 +1480,7 @@ app.get('/api/staff/:id/permissions', checkPermission('manage_permissions'), asy
             FROM permissions p
             LEFT JOIN staff_permissions sp ON p.permission_id = sp.permission_id AND sp.staff_id = $1
             ORDER BY p.permission_key
-        `, [req.params.id]);
+        `, [staff.id]);
         
         res.json({
             success: true,
@@ -1407,15 +1495,38 @@ app.get('/api/staff/:id/permissions', checkPermission('manage_permissions'), asy
 });
 
 // Grant permission to staff member
-app.post('/api/staff/:id/permissions/grant', checkPermission('manage_permissions'), async (req, res) => {
+app.post('/api/staff/:id/permissions/grant', async (req, res) => {
     const { permissionId } = req.body;
-    const staffId = req.params.id;
+    const { id } = req.params;
+    const { email } = req.query;
     const grantedBy = req.headers['x-user-name'] || 'Admin';
     
     try {
-        // Check if staff exists
-        const staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [staffId]);
-        if (staffResult.rows.length === 0) {
+        // Check if staff exists - prioritize email lookup if provided
+        // Try both staff and admin tables
+        let staffResult;
+        
+        if (email) {
+            // Try email lookup first in staff table
+            staffResult = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
+            }
+        }
+        
+        // If not found by email or no email provided, try by ID
+        if (!staffResult || staffResult.rows.length === 0) {
+            staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [parseInt(id)]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE id = $1', [parseInt(id)]);
+            }
+        }
+        
+        if (!staffResult || staffResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Staff member not found' });
         }
         
@@ -1428,9 +1539,9 @@ app.post('/api/staff/:id/permissions/grant', checkPermission('manage_permissions
             ON CONFLICT (staff_id, permission_id) 
             DO UPDATE SET permission_type = 'grant', granted_at = CURRENT_TIMESTAMP
             RETURNING *
-        `, [staffId, permissionId, grantedBy]);
+        `, [staffResult.rows[0].id, permissionId, grantedBy]);
         
-        logAudit('staff_permissions', 'Grant Permission', staffId, null, {
+        logAudit('staff_permissions', 'Grant Permission', staffResult.rows[0].id, null, {
             staff_name: staff.name,
             permission_id: permissionId,
             action: 'grant'
@@ -1447,15 +1558,38 @@ app.post('/api/staff/:id/permissions/grant', checkPermission('manage_permissions
 });
 
 // Revoke permission from staff member
-app.post('/api/staff/:id/permissions/revoke', checkPermission('manage_permissions'), async (req, res) => {
+app.post('/api/staff/:id/permissions/revoke', async (req, res) => {
     const { permissionId } = req.body;
-    const staffId = req.params.id;
+    const { id } = req.params;
+    const { email } = req.query;
     const revokedBy = req.headers['x-user-name'] || 'Admin';
     
     try {
-        // Check if staff exists
-        const staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [staffId]);
-        if (staffResult.rows.length === 0) {
+        // Check if staff exists - prioritize email lookup if provided
+        // Try both staff and admin tables
+        let staffResult;
+        
+        if (email) {
+            // Try email lookup first in staff table
+            staffResult = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
+            }
+        }
+        
+        // If not found by email or no email provided, try by ID
+        if (!staffResult || staffResult.rows.length === 0) {
+            staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [parseInt(id)]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE id = $1', [parseInt(id)]);
+            }
+        }
+        
+        if (!staffResult || staffResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Staff member not found' });
         }
         
@@ -1468,9 +1602,9 @@ app.post('/api/staff/:id/permissions/revoke', checkPermission('manage_permission
             ON CONFLICT (staff_id, permission_id) 
             DO UPDATE SET permission_type = 'revoke', granted_at = CURRENT_TIMESTAMP
             RETURNING *
-        `, [staffId, permissionId, revokedBy]);
+        `, [staffResult.rows[0].id, permissionId, revokedBy]);
         
-        logAudit('staff_permissions', 'Revoke Permission', staffId, null, {
+        logAudit('staff_permissions', 'Revoke Permission', staffResult.rows[0].id, null, {
             staff_name: staff.name,
             permission_id: permissionId,
             action: 'revoke'
@@ -1487,23 +1621,46 @@ app.post('/api/staff/:id/permissions/revoke', checkPermission('manage_permission
 });
 
 // Clear all permission overrides for a staff member
-app.post('/api/staff/:id/permissions/reset', checkPermission('manage_permissions'), async (req, res) => {
-    const staffId = req.params.id;
+app.post('/api/staff/:id/permissions/reset', async (req, res) => {
+    const { id } = req.params;
+    const { email } = req.query;
     const resetBy = req.headers['x-user-name'] || 'Admin';
     
     try {
-        // Check if staff exists
-        const staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [staffId]);
-        if (staffResult.rows.length === 0) {
+        // Check if staff exists - prioritize email lookup if provided
+        // Try both staff and admin tables
+        let staffResult;
+        
+        if (email) {
+            // Try email lookup first in staff table
+            staffResult = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
+            }
+        }
+        
+        // If not found by email or no email provided, try by ID
+        if (!staffResult || staffResult.rows.length === 0) {
+            staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [parseInt(id)]);
+            
+            // If not found in staff, try admins table
+            if (!staffResult || staffResult.rows.length === 0) {
+                staffResult = await pool.query('SELECT * FROM admins WHERE id = $1', [parseInt(id)]);
+            }
+        }
+        
+        if (!staffResult || staffResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Staff member not found' });
         }
         
         const staff = staffResult.rows[0];
         
         // Delete all permission overrides
-        await pool.query('DELETE FROM staff_permissions WHERE staff_id = $1', [staffId]);
+        await pool.query('DELETE FROM staff_permissions WHERE staff_id = $1', [staffResult.rows[0].id]);
         
-        logAudit('staff_permissions', 'Reset Permissions', staffId, null, {
+        logAudit('staff_permissions', 'Reset Permissions', staffResult.rows[0].id, null, {
             staff_name: staff.name,
             action: 'reset_all'
         }, resetBy);
@@ -1512,6 +1669,290 @@ app.post('/api/staff/:id/permissions/reset', checkPermission('manage_permissions
             success: true,
             message: `All permission overrides cleared for ${staff.name}`
         });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Update staff member details
+app.put('/api/staff/:id', async (req, res) => {
+    const { id } = req.params;
+    const { email } = req.query;
+    const { name, role, department, status } = req.body;
+    const updatedBy = req.headers['x-user-name'] || 'Admin';
+    
+    try {
+        // Check if staff exists - prioritize email lookup if provided
+        let staffResult;
+        
+        if (email) {
+            staffResult = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+        }
+        
+        // If not found by email or no email provided, try by ID
+        if (!staffResult || staffResult.rows.length === 0) {
+            staffResult = await pool.query('SELECT * FROM staff WHERE id = $1', [parseInt(id)]);
+        }
+        
+        if (staffResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Staff member not found' });
+        }
+        
+        const oldStaff = staffResult.rows[0];
+        
+        // Cannot edit Super Admin role
+        if (oldStaff.email === 'admin@patientpulse.com') {
+            return res.status(403).json({ success: false, error: 'Cannot edit Super Admin' });
+        }
+        
+        // Update staff details
+        const updateResult = await pool.query(
+            `UPDATE staff 
+             SET name = $1, role = $2, department = $3, status = $4, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $5
+             RETURNING *`,
+            [name || oldStaff.name, role || oldStaff.role, department || oldStaff.department, status || oldStaff.status, oldStaff.id]
+        );
+        
+        const updatedStaff = updateResult.rows[0];
+        
+        // Log the changes
+        const changes = {};
+        if (name && name !== oldStaff.name) changes.name = `${oldStaff.name} → ${name}`;
+        if (role && role !== oldStaff.role) changes.role = `${oldStaff.role} → ${role}`;
+        if (department && department !== oldStaff.department) changes.department = `${oldStaff.department} → ${department}`;
+        if (status && status !== oldStaff.status) changes.status = `${oldStaff.status} → ${status}`;
+        
+        logAudit('staff', 'Update Staff Details', oldStaff.id, null, {
+            staff_name: updatedStaff.name,
+            email: updatedStaff.email,
+            changes: changes
+        }, updatedBy);
+        
+        res.json({
+            success: true,
+            message: 'Staff member updated successfully',
+            staff: updatedStaff
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Get all staff members
+app.get('/api/staff', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT * FROM staff ORDER BY created_at DESC`
+        );
+        
+        res.json({
+            success: true,
+            staff: result.rows
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Create new staff member
+app.post('/api/staff', async (req, res) => {
+    const { email, name, role, department, status } = req.body;
+    const createdBy = req.headers['x-user-name'] || 'Admin';
+    
+    try {
+        // Validation
+        if (!email || !name || !role) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Email, name, and role are required' 
+            });
+        }
+        
+        // Check if staff with this email already exists
+        const existingStaff = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+        if (existingStaff.rows.length > 0) {
+            return res.status(409).json({ 
+                success: false, 
+                error: 'Staff member with this email already exists' 
+            });
+        }
+        
+        // Insert new staff member
+        const result = await pool.query(
+            `INSERT INTO staff (email, name, role, department, status, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             RETURNING *`,
+            [email, name, role, department || null, status || 'Active']
+        );
+        
+        const newStaff = result.rows[0];
+        
+        // Also create admin record for the new staff member so they can have permissions managed
+        try {
+            const adminResult = await pool.query(
+                `INSERT INTO admins (email, name, department, status, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                 ON CONFLICT (email) DO UPDATE SET status = $4, updated_at = CURRENT_TIMESTAMP
+                 RETURNING *`,
+                [email, name, department || null, status || 'Active']
+            );
+            
+            const newAdmin = adminResult.rows[0];
+            
+            // Assign role to the new admin
+            if (newAdmin && newAdmin.id) {
+                await pool.query(
+                    `INSERT INTO admin_role (admin_id, role_id)
+                     SELECT $1, id FROM role WHERE role_name = $2
+                     ON CONFLICT (admin_id, role_id) DO NOTHING`,
+                    [newAdmin.id, role]
+                );
+            }
+        } catch (adminErr) {
+            console.warn('Could not create admin record for new staff:', adminErr.message);
+            // Don't fail the request if admin creation fails
+        }
+        
+        // Log the action
+        logAudit('staff', 'Create Staff Member', newStaff.id, null, {
+            staff_name: newStaff.name,
+            email: newStaff.email,
+            role: newStaff.role,
+            department: newStaff.department,
+            status: newStaff.status
+        }, createdBy);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Staff member created successfully',
+            staff: newStaff
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Delete staff member by email (for removing staff assignments)
+app.delete('/api/staff/email/:email', async (req, res) => {
+    const email = decodeURIComponent(req.params.email);
+    const removedBy = req.headers['x-user-name'] || 'Admin';
+    
+    try {
+        // Find and delete staff record by email
+        const result = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+        
+        if (result.rows.length === 0) {
+            // Not found - return success anyway as the goal is to remove the assignment
+            return res.json({ 
+                success: true, 
+                message: 'Staff assignment not found (already removed)',
+                removed: false
+            });
+        }
+        
+        const staffMember = result.rows[0];
+        
+        // Delete the staff record
+        const deleteResult = await pool.query('DELETE FROM staff WHERE email = $1 RETURNING *', [email]);
+        
+        // Also delete any associated permissions
+        await pool.query('DELETE FROM staff_permissions WHERE staff_id = $1', [staffMember.id]);
+        
+        // Log the action
+        logAudit('staff', 'Remove Staff Assignment', staffMember.id, {
+            staff_name: staffMember.name,
+            email: staffMember.email,
+            role: staffMember.role,
+            department: staffMember.department
+        }, null, removedBy);
+        
+        res.json({ 
+            success: true, 
+            message: 'Staff assignment removed successfully',
+            removed: true,
+            staff: deleteResult.rows[0]
+        });
+    } catch (err) {
+        console.error('Error removing staff assignment:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Delete staff member
+app.delete('/api/staff/:id', async (req, res) => {
+    const staffId = req.params.id;
+    const { email } = req.query;
+    const createdBy = req.headers['x-user-name'] || 'Admin';
+    
+    try {
+        // Try to find staff in either staff or admin table
+        let memberInfo;
+        let isAdminRecord = false;
+        
+        // First check staff table
+        let result = await pool.query('SELECT * FROM staff WHERE id = $1', [staffId]);
+        
+        if (result.rows.length > 0) {
+            memberInfo = result.rows[0];
+        } else if (email) {
+            // If not found by ID and email provided, try staff table by email
+            result = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
+            if (result.rows.length > 0) {
+                memberInfo = result.rows[0];
+            } else {
+                // Try admins table by email
+                result = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
+                if (result.rows.length > 0) {
+                    memberInfo = result.rows[0];
+                    isAdminRecord = true;
+                }
+            }
+        } else {
+            // Try admins table by ID if not found in staff
+            result = await pool.query('SELECT * FROM admins WHERE id = $1', [staffId]);
+            if (result.rows.length > 0) {
+                memberInfo = result.rows[0];
+                isAdminRecord = true;
+            }
+        }
+        
+        if (!memberInfo) {
+            return res.status(404).json({ success: false, error: 'Staff member not found' });
+        }
+        
+        // Delete from appropriate table
+        let deleteResult;
+        if (isAdminRecord) {
+            // Only delete if it's a pure admin record (not Super Admin)
+            if (memberInfo.email === 'admin@patientpulse.com') {
+                return res.status(403).json({ 
+                    success: false, 
+                    error: 'Cannot delete Super Admin record' 
+                });
+            }
+            deleteResult = await pool.query('DELETE FROM admins WHERE id = $1 RETURNING *', [memberInfo.id]);
+        } else {
+            deleteResult = await pool.query('DELETE FROM staff WHERE id = $1 RETURNING *', [memberInfo.id]);
+        }
+        
+        if (deleteResult.rows.length > 0) {
+            // Log the action
+            logAudit(isAdminRecord ? 'admin' : 'staff', 'Delete Staff Member', memberInfo.id, {
+                staff_name: memberInfo.name,
+                email: memberInfo.email,
+                role: memberInfo.role || 'N/A',
+                department: memberInfo.department || 'N/A'
+            }, null, createdBy);
+            
+            res.json({ 
+                success: true, 
+                message: 'Staff member deleted successfully',
+                staff: deleteResult.rows[0]
+            });
+        } else {
+            res.status(400).json({ success: false, error: 'Failed to delete staff member' });
+        }
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -2339,6 +2780,10 @@ app.get('/api/rbac/permissions', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/departments
+ * Fetch all departments for dropdown
+ */
 /**
  * GET /api/rbac/admins
  * Fetch all admins with their roles

@@ -189,10 +189,45 @@
         }
 
         .alert {
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            border-radius: 4px;
+            position: fixed;
+            right: 20px;
+            min-width: 300px;
+            max-width: 400px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
             border-left: 4px solid;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.3s ease-out;
+            z-index: 9999;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .alert.closing {
+            animation: slideOutRight 0.3s ease-in forwards;
         }
 
         .alert.success {
@@ -201,16 +236,31 @@
             color: #155724;
         }
 
+        .alert.success strong {
+            color: #28a745;
+            font-size: 1.1rem;
+        }
+
         .alert.error {
             background: #f8d7da;
             border-color: #dc3545;
             color: #721c24;
         }
 
+        .alert.error strong {
+            color: #dc3545;
+            font-size: 1.1rem;
+        }
+
         .alert.warning {
             background: #fff3cd;
             border-color: #ffc107;
             color: #856404;
+        }
+
+        .alert.warning strong {
+            color: #ffc107;
+            font-size: 1.1rem;
         }
 
         .loading {
@@ -300,6 +350,14 @@
             display: flex;
             gap: 0.5rem;
             justify-content: flex-end;
+        }
+
+        .confirm-modal-content {
+            max-width: 400px;
+        }
+
+        .modal-body {
+            padding: 1.5rem 0;
         }
 
         .permission-group {
@@ -468,6 +526,148 @@
             background: #dae0e5;
         }
 
+        /* Form Group & Control Styling */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group label .required {
+            color: #dc3545;
+            margin-left: 2px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 0.95rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:hover {
+            border-color: #bbb;
+            background: #fafafa;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+            background: white;
+        }
+
+        .form-control option {
+            padding: 0.5rem;
+        }
+
+        /* Enhanced Modal Header */
+        .modal-content .modal-header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 1.25rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .modal-content .modal-header h3 {
+            color: #333;
+            font-size: 1.35rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-close:hover {
+            color: #333;
+            background: #f0f0f0;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Info Box Styling */
+        .info-box {
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #007bff;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1.5rem;
+        }
+
+        .info-box p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .info-box strong {
+            color: #007bff;
+        }
+
+        /* Button Styling in Modals */
+        .modal-footer .btn {
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-footer .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        .modal-footer .btn-primary:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .modal-footer .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .modal-footer .btn {
+            background: #6c757d;
+            color: white;
+            box-shadow: 0 2px 6px rgba(108, 117, 125, 0.2);
+        }
+
+        .modal-footer .btn:hover {
+            background: #5a6268;
+            box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Add Staff Modal Specific Styles */
+        #addStaffModal .modal-content {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        #addStaffModal .form-control {
+            border: 1.5px solid #e0e0e0;
+        }
+
+        #addStaffModal .form-group:last-of-type {
+            margin-bottom: 0;
+        }
+
         @media (max-width: 1024px) {
             .main-content {
                 margin-left: 0;
@@ -479,6 +679,11 @@
 
             .staff-table th, .staff-table td {
                 padding: 0.5rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-width: 90vw;
             }
         }
     </style>
@@ -508,9 +713,14 @@
 
             <!-- Staff Table -->
             <div class="staff-table-container">
-                <h2>
-                    <i class="fas fa-table"></i> Staff Members & Permissions
-                </h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0;">
+                        <i class="fas fa-table"></i> Staff Members & Permissions
+                    </h2>
+                    <button class="btn btn-primary" onclick="openAddStaffModal()" style="height: fit-content;">
+                        <i class="fas fa-user-plus"></i> Add Staff
+                    </button>
+                </div>
 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
@@ -540,7 +750,7 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Edit Permissions</h3>
+                <h3>Edit Staff Details</h3>
                 <button class="modal-close" onclick="closeEditModal()">&times;</button>
             </div>
 
@@ -551,6 +761,69 @@
                     <i class="fas fa-save"></i> Save Changes
                 </button>
                 <button class="btn" onclick="closeEditModal()" style="background: #6c757d; color: white;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Staff Modal -->
+    <div id="addStaffModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Add New Staff Member</h3>
+                <button class="modal-close" onclick="closeAddStaffModal()">&times;</button>
+            </div>
+
+            <div style="padding: 0;">
+                <div class="form-group">
+                    <label for="addEmail">Email Address <span class="required">*</span></label>
+                    <input type="email" id="addEmail" class="form-control" placeholder="staff@hospital.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addName">Name <span class="required">*</span></label>
+                    <input type="text" id="addName" class="form-control" placeholder="Staff member name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addRole">Role <span class="required">*</span></label>
+                    <select id="addRole" class="form-control" required>
+                        <option value="">-- Select Role --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Admin Manager">Admin Manager</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Supervisor">Supervisor</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="addDepartment">Department</label>
+                    <select id="addDepartment" class="form-control">
+                        <option value="">-- Select Department --</option>
+                        <!-- Populated by JavaScript -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="addStatus">Status <span class="required">*</span></label>
+                    <select id="addStatus" class="form-control" required>
+                        <option value="Active" selected>Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Disabled">Disabled</option>
+                    </select>
+                </div>
+
+                <div class="info-box">
+                    <p><strong><i class="fas fa-info-circle"></i> Permissions:</strong> The staff member will automatically receive permissions based on their selected role. You can customize individual permissions later using the "Manage Overrides" button.</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveAddStaff()" id="addStaffBtn">
+                    <i class="fas fa-plus"></i> Add Staff Member
+                </button>
+                <button class="btn" onclick="closeAddStaffModal()">
                     <i class="fas fa-times"></i> Cancel
                 </button>
             </div>
@@ -595,20 +868,61 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem;"></i>
+                    <h3 id="confirmationTitle" style="margin: 0.5rem 0; color: #333;">Confirm Action</h3>
+                    <p id="confirmationMessage" style="margin: 0.5rem 0; color: #666; line-height: 1.6;"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeConfirmation()" style="background: #6c757d; color: white;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button id="confirmationOkBtn" class="btn btn-danger" onclick="confirmAction()" style="background: #dc3545; color: white;">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let allPermissions = [];
         let allAdmins = [];
         let editingAdminId = null;
+        let editingAdminEmail = null;
 
         // Show alert message
         function showAlert(message, type = 'success') {
             const alertContainer = document.getElementById('alertContainer');
             const alert = document.createElement('div');
             alert.className = `alert ${type}`;
-            alert.innerHTML = `<strong>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</strong> ${message}`;
+            
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            alert.innerHTML = `<strong>${icon}</strong><span>${message}</span>`;
+            
             alertContainer.appendChild(alert);
 
-            setTimeout(() => alert.remove(), 4000);
+            // Calculate position for stacking
+            const existingToasts = alertContainer.querySelectorAll('.alert:not(.closing)').length;
+            const bottomPosition = 20 + ((existingToasts - 1) * 90);
+            alert.style.bottom = bottomPosition + 'px';
+
+            // Auto-remove with animation
+            const removeDelay = setTimeout(() => {
+                alert.classList.add('closing');
+                setTimeout(() => alert.remove(), 300);
+            }, 4000);
+
+            // Allow manual close on click
+            alert.addEventListener('click', () => {
+                clearTimeout(removeDelay);
+                alert.classList.add('closing');
+                setTimeout(() => alert.remove(), 300);
+            });
         }
 
         // Show loading state
@@ -620,15 +934,57 @@
             document.getElementById('loading').classList.remove('active');
         }
 
+        // Confirmation modal management
+        let confirmationCallback = null;
+
+        function showConfirmation(title, message, onConfirm) {
+            confirmationCallback = onConfirm;
+            document.getElementById('confirmationTitle').textContent = title;
+            document.getElementById('confirmationMessage').textContent = message;
+            document.getElementById('confirmationModal').classList.add('active');
+        }
+
+        function closeConfirmation() {
+            confirmationCallback = null;
+            document.getElementById('confirmationModal').classList.remove('active');
+        }
+
+        function confirmAction() {
+            if (confirmationCallback) {
+                confirmationCallback();
+            }
+            closeConfirmation();
+        }
+
         // Load all staff members
         async function loadStaffMembers() {
             showLoading();
             try {
-                const response = await fetch('/api/rbac/admins');
-                const data = await response.json();
-                allAdmins = data.admins || [];
+                // Fetch admins
+                const adminResponse = await fetch('/api/rbac/admins');
+                if (!adminResponse.ok) {
+                    throw new Error(`Failed to fetch admins: ${adminResponse.status}`);
+                }
+                const adminData = await adminResponse.json();
+                allAdmins = adminData.admins || [];
+                
+                // Fetch all staff
+                const staffResponse = await fetch('/api/staff');
+                if (!staffResponse.ok) {
+                    throw new Error(`Failed to fetch staff: ${staffResponse.status}`);
+                }
+                const staffData = await staffResponse.json();
+                const allStaff = staffData.staff || [];
+                
+                // Merge: combine admins and pure staff records (staff not in admin table)
+                const adminEmails = new Set(allAdmins.map(a => a.email));
+                const pureStaffMembers = allStaff.filter(s => !adminEmails.has(s.email));
+                
+                // Combine for rendering
+                window.allStaffMembers = [...allAdmins, ...pureStaffMembers];
                 renderStaffTable();
             } catch (err) {
+                console.error('Error loading staff members:', err);
                 showAlert('Error loading staff members: ' + err.message, 'error');
             } finally {
                 hideLoading();
@@ -651,53 +1007,90 @@
             const tbody = document.getElementById('staffTableBody');
             tbody.innerHTML = '';
 
-            for (const admin of allAdmins) {
-                const row = document.createElement('tr');
-                // Get the first role (primary role)
-                const primaryRole = admin.roles && admin.roles.length > 0 ? admin.roles[0].role_name : 'N/A';
-                const roleClass = primaryRole.toLowerCase().replace(/\s+/g, '-');
+            const staffMembers = window.allStaffMembers || allAdmins || [];
 
-                // Load staff permission overrides
+            for (const member of staffMembers) {
+                const row = document.createElement('tr');
+                
+                // For admin records, use admin data; for pure staff, use staff data
+                const isAdminRecord = member.roles !== undefined;
+                
+                let displayRole = member.role || (member.roles && member.roles.length > 0 ? member.roles[0].role_name : 'N/A');
+                let displayDepartment = member.department || 'N/A';
+                let displayName = member.name || 'N/A';
+                let displayStatus = member.status || 'Active';
+                const email = member.email;
+                
+                const roleClass = displayRole.toLowerCase().replace(/\s+/g, '-');
+
+                // Load staff permission overrides and get latest staff info
                 let overrideBadgesHtml = '';
+                
                 try {
-                    const response = await fetch(`/api/staff/${admin.id}/permissions`);
+                    const response = await fetch(`/api/staff/${member.id}/permissions?email=${encodeURIComponent(email)}`);
                     if (response.ok) {
                         const data = await response.json();
-                        const overrides = data.staff.permissions.filter(p => p.permission_type);
+                        const staffInfo = data.staff;
                         
-                        if (overrides.length > 0) {
-                            const grantedCount = overrides.filter(p => p.permission_type === 'grant').length;
-                            const revokedCount = overrides.filter(p => p.permission_type === 'revoke').length;
+                        // Use staff table values for display (these reflect recent edits)
+                        if (staffInfo) {
+                            displayRole = staffInfo.role || displayRole;
+                            displayDepartment = staffInfo.department || displayDepartment;
+                            displayName = staffInfo.name || displayName;
+                            displayStatus = staffInfo.status || displayStatus;
+                        }
+                        
+                        // Only show overrides if this is an admin record
+                        if (isAdminRecord && data.staff && data.staff.permissions) {
+                            const overrides = data.staff.permissions.filter(p => p.permission_type);
                             
-                            if (grantedCount > 0) {
-                                overrideBadgesHtml += `<span class="override-badge grant">+${grantedCount} Granted</span>`;
+                            if (overrides.length > 0) {
+                                const grantedCount = overrides.filter(p => p.permission_type === 'grant').length;
+                                const revokedCount = overrides.filter(p => p.permission_type === 'revoke').length;
+                                
+                                if (grantedCount > 0) {
+                                    overrideBadgesHtml += `<span class="override-badge grant">+${grantedCount} Granted</span>`;
+                                }
+                                if (revokedCount > 0) {
+                                    overrideBadgesHtml += `<span class="override-badge revoke">-${revokedCount} Revoked</span>`;
+                                }
+                            } else {
+                                overrideBadgesHtml = '<span style="font-size: 0.85rem; color: #999;">No overrides</span>';
                             }
-                            if (revokedCount > 0) {
-                                overrideBadgesHtml += `<span class="override-badge revoke">-${revokedCount} Revoked</span>`;
-                            }
+                        } else if (!isAdminRecord) {
+                            overrideBadgesHtml = '<span style="font-size: 0.85rem; color: #999;">Staff Member</span>';
+                        }
+                    } else {
+                        console.warn(`Permission endpoint error for ${email}: ${response.status}`);
+                        if (!isAdminRecord) {
+                            overrideBadgesHtml = '<span style="font-size: 0.85rem; color: #999;">Staff Member</span>';
                         } else {
                             overrideBadgesHtml = '<span style="font-size: 0.85rem; color: #999;">No overrides</span>';
                         }
                     }
                 } catch (err) {
-                    console.error('Error loading overrides for staff ' + admin.id, err);
-                    overrideBadgesHtml = '<span style="font-size: 0.85rem; color: #999;">No overrides</span>';
+                    console.error('Error loading overrides for staff ' + member.id, err);
+                    if (!isAdminRecord) {
+                        overrideBadgesHtml = '<span style="font-size: 0.85rem; color: #999;">Staff Member</span>';
+                    } else {
+                        overrideBadgesHtml = '<span style="font-size: 0.85rem; color: #999;">No overrides</span>';
+                    }
                 }
 
                 row.innerHTML = `
                     <td>
-                        <div class="name-cell">${admin.name || 'N/A'}</div>
-                        <div class="email-cell">${admin.email}</div>
+                        <div class="name-cell">${displayName}</div>
+                        <div class="email-cell">${email}</div>
                     </td>
                     <td>
                         <span class="role-badge ${roleClass}">
-                            ${primaryRole}
+                            ${displayRole}
                         </span>
                     </td>
-                    <td>${admin.department || 'N/A'}</td>
+                    <td>${displayDepartment}</td>
                     <td>
-                        <span class="status-badge ${(admin.status || 'Active').toLowerCase()}">
-                            ${admin.status || 'Active'}
+                        <span class="status-badge ${displayStatus.toLowerCase()}">
+                            ${displayStatus}
                         </span>
                     </td>
                     <td>
@@ -707,14 +1100,14 @@
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-primary" onclick="openOverridesModal(${admin.id}, '${admin.name}', '${primaryRole}', '${roleClass}')">
+                            <button class="btn btn-primary" onclick="openOverridesModal(${member.id}, '${email}', '${displayName}', '${displayRole}', '${roleClass}')">
                                 <i class="fas fa-key"></i> Manage Overrides
                             </button>
-                            <button class="btn btn-primary" onclick="openEditModal(${admin.id}, '${admin.email}', '${admin.name}')">
+                            <button class="btn btn-primary" onclick="openEditModal(${member.id}, '${email}', '${displayName}', '${displayRole}', '${displayDepartment || 'N/A'}', '${displayStatus || 'Active'}')">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            ${admin.email !== 'admin@patientpulse.com' ? `
-                                <button class="btn btn-danger" onclick="deleteStaff(${admin.id}, '${admin.email}')">
+                            ${email !== 'admin@patientpulse.com' ? `
+                                <button class="btn btn-danger" onclick="deleteStaff(${member.id}, '${email}')">
                                     <i class="fas fa-trash"></i> Delete
                                 </button>
                             ` : '<span style="color: #999; font-size: 0.85rem;">Protected</span>'}
@@ -726,58 +1119,116 @@
         }
 
         // Open edit modal
-        async function openEditModal(adminId, email, name) {
+        async function openEditModal(adminId, email, name, role, department, status) {
             if (email === 'admin@patientpulse.com') {
-                showAlert('Cannot edit Super Admin permissions', 'warning');
+                showAlert('Cannot edit Super Admin', 'warning');
                 return;
             }
 
             editingAdminId = adminId;
+            editingAdminEmail = email;
             document.getElementById('editModal').classList.add('active');
 
             try {
-                const response = await fetch(`/api/rbac/user/${adminId}/permissions`);
-                const data = await response.json();
-                const userPermissions = data.permissions || [];
+                // Fetch staff permissions using email as fallback parameter
+                try {
+                    const permResponse = await fetch(`/api/staff/${adminId}/permissions?email=${encodeURIComponent(email)}`);
+                    if (permResponse.ok) {
+                        const permData = await permResponse.json();
+                        console.log('Staff permissions loaded:', permData);
+                    } else {
+                        console.warn(`Permission endpoint returned ${permResponse.status}`);
+                    }
+                } catch (permErr) {
+                    console.warn('Could not load permissions:', permErr);
+                }
+
+                // Fetch departments for dropdown
+                const deptResponse = await fetch('/api/departments');
+                if (!deptResponse.ok) throw new Error(`HTTP ${deptResponse.status}`);
+                const deptData = await deptResponse.json();
+                const departments = deptData.departments || [];
+                
+                console.log('Departments loaded:', departments.length);
+
+                // Create editable form
+                let deptOptions = '';
+                if (departments && departments.length > 0) {
+                    deptOptions = departments.map(dept => `<option value="${dept.department_name}" ${department === dept.department_name ? 'selected' : ''}>${dept.department_name}</option>`).join('');
+                } else {
+                    deptOptions = '<option value="">No departments available</option>';
+                }
 
                 let html = `
-                    <p style="margin-bottom: 1.5rem; color: #666; background: #f8f9fa; padding: 1rem; border-radius: 4px;">
-                        <strong>User:</strong> ${name}<br>
-                        <strong>Email:</strong> ${email}
-                    </p>
-                    <hr style="margin-bottom: 1.5rem; border: none; border-top: 2px solid #dee2e6;">
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0 0 1rem 0; color: #333;">Edit Staff Member</h3>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>Email:</strong> ${email}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editName">Name</label>
+                        <input type="text" id="editName" class="form-control" value="${name}" placeholder="Staff name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editRole">Role</label>
+                        <select id="editRole" class="form-control">
+                            <option value="Admin" ${role === 'Admin' ? 'selected' : ''}>Admin</option>
+                            <option value="Manager" ${role === 'Manager' ? 'selected' : ''}>Manager</option>
+                            <option value="Supervisor" ${role === 'Supervisor' ? 'selected' : ''}>Supervisor</option>
+                            <option value="Admin Manager" ${role === 'Admin Manager' ? 'selected' : ''}>Admin Manager</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editDepartment">Department</label>
+                        <select id="editDepartment" class="form-control">
+                            <option value="">-- Select Department --</option>
+                            ${deptOptions}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editStatus">Status</label>
+                        <select id="editStatus" class="form-control">
+                            <option value="Active" ${status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                            <option value="Disabled" ${status === 'Disabled' ? 'selected' : ''}>Disabled</option>
+                        </select>
+                    </div>
+
+                    <style>
+                        .form-group {
+                            margin-bottom: 1rem;
+                        }
+                        .form-group label {
+                            display: block;
+                            margin-bottom: 0.5rem;
+                            font-weight: 600;
+                            color: #333;
+                            font-size: 0.95rem;
+                        }
+                        .form-control {
+                            width: 100%;
+                            padding: 0.75rem;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            font-size: 0.95rem;
+                            font-family: inherit;
+                            box-sizing: border-box;
+                        }
+                        .form-control:focus {
+                            outline: none;
+                            border-color: #007bff;
+                            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+                        }
+                    </style>
                 `;
-
-                // Render permissions by category
-                for (const [category, permissions] of Object.entries(allPermissions)) {
-                    html += `
-                        <div class="permission-group">
-                            <h4>${category}</h4>
-                            <div class="permission-list">
-                    `;
-
-                    permissions.forEach(perm => {
-                        const isChecked = userPermissions.some(p => p.permission_key === perm.permission_key);
-                        html += `
-                            <div class="permission-item">
-                                <input type="checkbox" class="permission-check" 
-                                       data-permission-id="${perm.permission_id}" 
-                                       data-permission-key="${perm.permission_key}"
-                                       ${isChecked ? 'checked' : ''}>
-                                <label>${perm.permission_name}</label>
-                            </div>
-                        `;
-                    });
-
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                }
 
                 document.getElementById('editModalContent').innerHTML = html;
             } catch (err) {
-                showAlert('Error loading permissions: ' + err.message, 'error');
+                console.error('Error in openEditModal:', err);
+                showAlert('Error loading staff details: ' + err.message, 'error');
             }
         }
 
@@ -789,11 +1240,13 @@
 
         // Variables for permission overrides
         let editingStaffIdOverrides = null;
+        let editingStaffEmailOverrides = null;
         let staffPermissionOverrides = {}; // Track permission overrides like {permissionId: 'grant'|'revoke'|null}
 
         // Open permission overrides modal
-        async function openOverridesModal(staffId, staffName, role, roleClass) {
+        async function openOverridesModal(staffId, email, staffName, role, roleClass) {
             editingStaffIdOverrides = staffId;
+            editingStaffEmailOverrides = email;
             staffPermissionOverrides = {};
 
             // Set header info
@@ -804,8 +1257,16 @@
 
             // Load and display all available permissions
             try {
-                const response = await fetch(`/api/staff/${staffId}/permissions`);
-                if (!response.ok) throw new Error('Failed to load permissions');
+                const response = await fetch(`/api/staff/${staffId}/permissions?email=${encodeURIComponent(email)}`);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showAlert('Staff member not found. Please try refreshing the page.', 'error');
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return;
+                }
 
                 const data = await response.json();
                 const permissions = data.staff.permissions;
@@ -855,7 +1316,8 @@
 
                 document.getElementById('overridesModal').classList.add('active');
             } catch (err) {
-                showAlert('Error loading permissions: ' + err.message, 'error');
+                console.error('Error loading permissions:', err);
+                showAlert('Error loading permissions. Please try again.', 'error');
             }
         }
 
@@ -887,14 +1349,14 @@
             try {
                 for (const [permissionId, status] of Object.entries(staffPermissionOverrides)) {
                     if (status === 'grant') {
-                        const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/grant`, {
+                        const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/grant?email=${encodeURIComponent(editingStaffEmailOverrides)}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ permissionId: parseInt(permissionId) })
                         });
                         if (!response.ok) throw new Error('Failed to grant permission');
                     } else if (status === 'revoke') {
-                        const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/revoke`, {
+                        const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/revoke?email=${encodeURIComponent(editingStaffEmailOverrides)}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ permissionId: parseInt(permissionId) })
@@ -902,7 +1364,7 @@
                         if (!response.ok) throw new Error('Failed to revoke permission');
                     } else if (status === null) {
                         // Clear override - delete from database
-                        const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/revoke`, {
+                        const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/revoke?email=${encodeURIComponent(editingStaffEmailOverrides)}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ permissionId: parseInt(permissionId) })
@@ -921,41 +1383,81 @@
 
         // Reset all overrides for staff member
         async function resetAllOverrides() {
-            if (!confirm('Are you sure you want to reset all permission overrides for this staff member? They will use role-based permissions.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/reset`, { method: 'POST' });
-                if (!response.ok) throw new Error('Failed to reset overrides');
-                
-                showAlert('All permission overrides cleared!', 'success');
-                closeOverridesModal();
-                renderStaffTable();
-            } catch (err) {
-                showAlert('Error resetting overrides: ' + err.message, 'error');
-            }
+            showConfirmation(
+                'Reset Permission Overrides',
+                'Are you sure you want to reset all permission overrides for this staff member? They will use role-based permissions.',
+                async () => {
+                    try {
+                        const response = await fetch(`/api/staff/${editingStaffIdOverrides}/permissions/reset?email=${encodeURIComponent(editingStaffEmailOverrides)}`, { method: 'POST' });
+                        if (!response.ok) throw new Error('Failed to reset overrides');
+                        
+                        showAlert('All permission overrides cleared!', 'success');
+                        closeOverridesModal();
+                        renderStaffTable();
+                    } catch (err) {
+                        showAlert('Error resetting overrides: ' + err.message, 'error');
+                    }
+                }
+            );
         }
 
         // Save permissions
         async function savePermissions() {
-            const checkboxes = document.querySelectorAll('.permission-check:checked');
-            const permissionIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.permissionId));
-
             try {
-                const response = await fetch('/api/rbac/admin/update-permissions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminId: editingAdminId, permissionIds })
-                });
+                const name = document.getElementById('editName')?.value;
+                const role = document.getElementById('editRole')?.value;
+                const department = document.getElementById('editDepartment')?.value;
+                const status = document.getElementById('editStatus')?.value;
 
-                if (response.ok) {
-                    showAlert('Permissions updated successfully!', 'success');
-                    closeEditModal();
-                    renderStaffTable();
+                // If we have edit form fields, save staff details
+                if (name !== undefined) {
+                    const emailParam = editingAdminEmail ? `?email=${encodeURIComponent(editingAdminEmail)}` : '';
+                    const response = await fetch(`/api/staff/${editingAdminId}${emailParam}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name.trim(),
+                            role: role,
+                            department: department.trim() === '' ? null : department.trim(),
+                            status: status
+                        })
+                    });
+
+                    if (response.ok) {
+                        showAlert('Staff member updated successfully!', 'success');
+                        closeEditModal();
+                        // Reload staff data to reflect changes
+                        try {
+                            const adminsResponse = await fetch('/api/rbac/admins');
+                            const adminsData = await adminsResponse.json();
+                            allAdmins = adminsData.admins || [];
+                            renderStaffTable();
+                        } catch (e) {
+                            renderStaffTable();
+                        }
+                    } else {
+                        const error = await response.json();
+                        showAlert(error.error || 'Error updating staff member', 'error');
+                    }
                 } else {
-                    const error = await response.json();
-                    showAlert(error.message || 'Error updating permissions', 'error');
+                    // Fallback to old permission-based saving
+                    const checkboxes = document.querySelectorAll('.permission-check:checked');
+                    const permissionIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.permissionId));
+
+                    const response = await fetch('/api/rbac/admin/update-permissions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ adminId: editingAdminId, permissionIds })
+                    });
+
+                    if (response.ok) {
+                        showAlert('Permissions updated successfully!', 'success');
+                        closeEditModal();
+                        renderStaffTable();
+                    } else {
+                        const error = await response.json();
+                        showAlert(error.message || 'Error updating permissions', 'error');
+                    }
                 }
             } catch (err) {
                 showAlert('Error: ' + err.message, 'error');
@@ -964,21 +1466,171 @@
 
         // Delete staff member
         async function deleteStaff(adminId, email) {
-            if (!confirm(`Are you sure you want to delete ${email}? This action cannot be undone.`)) {
+            showConfirmation(
+                'Delete Staff Member',
+                `Are you sure you want to delete ${email}? This action cannot be undone.`,
+                async () => {
+                    try {
+                        // Delete using email parameter for better lookup
+                        const response = await fetch(`/api/staff/${adminId}?email=${encodeURIComponent(email)}`, { 
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            showAlert('Staff member deleted successfully!', 'success');
+                            
+                            // Remove from frontend immediately, then reload to ensure sync
+                            const rows = document.querySelectorAll('tbody tr');
+                            rows.forEach(row => {
+                                const emailCell = row.querySelector('.email-cell');
+                                if (emailCell && emailCell.textContent.trim() === email) {
+                                    row.remove();
+                                }
+                            });
+                            
+                            // Reload the full list after a short delay to ensure backend is updated
+                            setTimeout(() => loadStaffMembers(), 500);
+                        } else if (response.status === 404) {
+                            showAlert('Staff member not found', 'error');
+                            // Still reload to sync frontend with database
+                            loadStaffMembers();
+                        } else if (response.status === 403) {
+                            showAlert('Cannot delete this staff member', 'error');
+                        } else {
+                            try {
+                                const error = await response.json();
+                                showAlert(error.error || 'Error deleting staff member', 'error');
+                            } catch {
+                                showAlert('Error deleting staff member', 'error');
+                            }
+                        }
+                    } catch (err) {
+                        showAlert('Error: ' + err.message, 'error');
+                    }
+                }
+            );
+        }
+
+        // Open add staff modal
+        async function openAddStaffModal() {
+            document.getElementById('addStaffModal').classList.add('active');
+            
+            // Load departments for the dropdown
+            try {
+                const response = await fetch('/api/departments');
+                if (!response.ok) {
+                    console.error('Failed to fetch departments, status:', response.status);
+                    return; // Still open the modal, just without departments
+                }
+                
+                const data = await response.json();
+                const departments = data.departments || [];
+                const deptSelect = document.getElementById('addDepartment');
+                
+                if (!deptSelect) {
+                    console.error('Department select element not found');
+                    return;
+                }
+                
+                // Clear existing options except the first one
+                deptSelect.innerHTML = '<option value="">-- Select Department --</option>';
+                
+                // Add department options
+                if (Array.isArray(departments) && departments.length > 0) {
+                    departments.forEach(dept => {
+                        if (dept && dept.department_name) {
+                            const option = document.createElement('option');
+                            option.value = dept.department_name;
+                            option.textContent = dept.department_name;
+                            deptSelect.appendChild(option);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading departments:', err);
+                // Don't show alert - just let user continue without departments loaded yet
+                // They can still submit the form
+            }
+        }
+
+        // Close add staff modal
+        function closeAddStaffModal() {
+            document.getElementById('addStaffModal').classList.remove('active');
+            // Clear form fields
+            document.getElementById('addEmail').value = '';
+            document.getElementById('addName').value = '';
+            document.getElementById('addRole').value = '';
+            document.getElementById('addDepartment').value = '';
+            document.getElementById('addStatus').value = 'Active';
+        }
+
+        // Save new staff member
+        async function saveAddStaff() {
+            const email = document.getElementById('addEmail').value.trim();
+            const name = document.getElementById('addName').value.trim();
+            const role = document.getElementById('addRole').value.trim();
+            const department = document.getElementById('addDepartment').value.trim();
+            const status = document.getElementById('addStatus').value;
+            
+            // Validation
+            if (!email) {
+                showAlert('Email address is required', 'error');
                 return;
             }
-
+            
+            if (!name) {
+                showAlert('Name is required', 'error');
+                return;
+            }
+            
+            if (!role) {
+                showAlert('Role is required', 'error');
+                return;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showAlert('Invalid email format', 'error');
+                return;
+            }
+            
+            // Disable button during submission
+            const addBtn = document.getElementById('addStaffBtn');
+            const originalText = addBtn.innerHTML;
+            addBtn.disabled = true;
+            addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            
             try {
-                const response = await fetch(`/api/rbac/admin/${adminId}`, { method: 'DELETE' });
+                const response = await fetch('/api/staff', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        name: name,
+                        role: role,
+                        department: department || null,
+                        status: status
+                    })
+                });
+                
                 if (response.ok) {
-                    showAlert('Staff member deleted successfully!', 'success');
-                    renderStaffTable();
+                    const data = await response.json();
+                    showAlert(`Staff member "${name}" added successfully!`, 'success');
+                    closeAddStaffModal();
+                    // Reload staff table
+                    loadStaffMembers();
                 } else {
                     const error = await response.json();
-                    showAlert(error.message || 'Error deleting staff member', 'error');
+                    showAlert(error.error || 'Error adding staff member', 'error');
                 }
             } catch (err) {
                 showAlert('Error: ' + err.message, 'error');
+            } finally {
+                addBtn.disabled = false;
+                addBtn.innerHTML = originalText;
             }
         }
 
@@ -995,9 +1647,21 @@
             }
         });
 
+        document.getElementById('addStaffModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addStaffModal') {
+                closeAddStaffModal();
+            }
+        });
+
         document.getElementById('overridesModal').addEventListener('click', (e) => {
             if (e.target.id === 'overridesModal') {
                 closeOverridesModal();
+            }
+        });
+
+        document.getElementById('confirmationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'confirmationModal') {
+                closeConfirmation();
             }
         });
     </script>
