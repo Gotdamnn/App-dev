@@ -490,31 +490,65 @@ async function editReport() {
 
 // Resolve report
 async function resolveReport() {
-    const resolutionNotes = prompt('Enter resolution notes:');
-    if (!resolutionNotes) return;
-
-    try {
-        const response = await fetch(`${API_BASE}/employee-reports/${currentReportId}/resolve`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                resolution_notes: resolutionNotes,
-                action_taken: resolutionNotes
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showAlert('Report marked as resolved', 'success');
-            detailsModal.hide();
-            loadReports(currentPage);
-            loadStatistics();
+    // Show modal to get resolution notes instead of using prompt()
+    const resolutionModal = document.createElement('div');
+    resolutionModal.className = 'modal fade';
+    resolutionModal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info">
+                    <h5 class="modal-title text-white">Resolve Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Resolution Notes:</label>
+                    <textarea id="resolutionNotesInput" class="form-control" rows="4" placeholder="Enter your resolution notes here..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmResolveBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(resolutionModal);
+    const modal = new bootstrap.Modal(resolutionModal);
+    modal.show();
+    
+    document.getElementById('confirmResolveBtn').onclick = async () => {
+        const resolutionNotes = document.getElementById('resolutionNotesInput').value;
+        
+        if (!resolutionNotes.trim()) {
+            alert('Please enter resolution notes');
+            return;
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showAlert('Failed to resolve report', 'danger');
-    }
+
+        try {
+            const response = await fetch(`${API_BASE}/employee-reports/${currentReportId}/resolve`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    resolution_notes: resolutionNotes,
+                    action_taken: resolutionNotes
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert('Report marked as resolved', 'success');
+                modal.hide();
+                resolutionModal.remove();
+                detailsModal.hide();
+                loadReports(currentPage);
+                loadStatistics();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Failed to resolve report', 'danger');
+        }
+    };
 }
 
 // Delete report

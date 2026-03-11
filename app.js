@@ -2834,11 +2834,14 @@ app.get('/api/debug/employee-reports-check', async (req, res) => {
     }
 });
 
-// Insert sample employee report (for testing)
+// Insert sample employee reports (for testing) - can create multiple
 app.post('/api/debug/create-sample-report', async (req, res) => {
     try {
-        // Get first employee
-        const empResult = await pool.query('SELECT employee_id, first_name, last_name, department_id FROM employees LIMIT 1');
+        const { count = 1 } = req.body; // Default to 1, can be 2, 3, or more
+        const numReports = Math.min(Math.max(parseInt(count) || 1, 1), 10); // Max 10 reports to prevent abuse
+        
+        // Get all employees
+        const empResult = await pool.query('SELECT employee_id, first_name, last_name, department_id FROM employees');
         
         if (empResult.rows.length === 0) {
             return res.status(400).json({
@@ -2847,42 +2850,57 @@ app.post('/api/debug/create-sample-report', async (req, res) => {
             });
         }
 
-        const emp = empResult.rows[0];
+        const employees = empResult.rows;
+        const createdReports = [];
+        
+        const reportTypes = ['Complaint', 'Suggestion', 'Incident', 'Feedback'];
+        const categories = ['Performance Issue', 'Attendance', 'Behavior', 'Safety Concern', 'Quality Issue'];
+        const severities = ['Low', 'Medium', 'High'];
+        const priorities = ['Normal', 'Urgent'];
 
-        // Get department name
-        const deptResult = await pool.query('SELECT department_name FROM departments WHERE department_id = $1', [emp.department_id]);
-        const deptName = deptResult.rows.length > 0 ? deptResult.rows[0].department_name : 'Unknown';
+        // Create multiple reports
+        for (let i = 0; i < numReports; i++) {
+            const emp = employees[i % employees.length]; // Cycle through employees
+            const deptResult = await pool.query('SELECT department_name FROM departments WHERE department_id = $1', [emp.department_id]);
+            const deptName = deptResult.rows.length > 0 ? deptResult.rows[0].department_name : 'Unknown';
 
-        // Insert sample report
-        const result = await pool.query(`
-            INSERT INTO employee_reports 
-            (employee_id, employee_name, department_id, department_name, report_type, category, title, description, reported_by, severity, priority, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            RETURNING *
-        `, [
-            emp.employee_id,
-            `${emp.first_name} ${emp.last_name}`,
-            emp.department_id,
-            deptName,
-            'Complaint',
-            'Performance Issue',
-            'Sample Report - Please Delete',
-            'This is a sample employee report created for testing purposes. Feel free to delete this report.',
-            'System',
-            'Medium',
-            'Normal',
-            'Open'
-        ]);
+            const reportType = reportTypes[Math.floor(Math.random() * reportTypes.length)];
+            const category = categories[Math.floor(Math.random() * categories.length)];
+            const severity = severities[Math.floor(Math.random() * severities.length)];
+            const priority = priorities[Math.floor(Math.random() * priorities.length)];
 
-        console.log('✅ Sample report created:', result.rows[0].report_id);
+            const result = await pool.query(`
+                INSERT INTO employee_reports 
+                (employee_id, employee_name, department_id, department_name, report_type, category, title, description, reported_by, severity, priority, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                RETURNING *
+            `, [
+                emp.employee_id,
+                `${emp.first_name} ${emp.last_name}`,
+                emp.department_id,
+                deptName,
+                reportType,
+                category,
+                `Test Report #${i + 1} - ${reportType}`,
+                `This is test report #${i + 1} created for testing purposes. Type: ${reportType}, Category: ${category}. Feel free to delete this report.`,
+                'System',
+                severity,
+                priority,
+                'Open'
+            ]);
+
+            createdReports.push(result.rows[0]);
+            console.log(`✅ Test report #${i + 1} created:`, result.rows[0].report_id);
+        }
 
         res.json({
             success: true,
-            message: 'Sample report created successfully!',
-            report: result.rows[0]
+            message: `${createdReports.length} test report(s) created successfully!`,
+            count: createdReports.length,
+            reports: createdReports
         });
     } catch (err) {
-        console.error('❌ Error creating sample report:', err.message);
+        console.error('❌ Error creating sample reports:', err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
