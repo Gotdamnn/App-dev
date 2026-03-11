@@ -3,7 +3,8 @@
 
 // Only declare API_BASE if not already declared
 if (typeof API_BASE === 'undefined') {
-    var API_BASE = 'http://localhost:3001/api';
+    // Dynamically set API_BASE based on current domain
+    var API_BASE = window.location.origin + '/api';
 }
 
 const REFRESH_INTERVAL = 15000; // 15 seconds
