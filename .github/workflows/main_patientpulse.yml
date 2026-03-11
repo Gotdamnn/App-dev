@@ -18,11 +18,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Set up Node.js 24
       uses: actions/setup-node@v4
       with:
         node-version: '24.x'
+        cache: 'npm'
     
     - name: Install dependencies
       run: |
@@ -35,7 +38,7 @@ jobs:
         ls -la
     
     - name: Azure Login
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     
