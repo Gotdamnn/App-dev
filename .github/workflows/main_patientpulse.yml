@@ -37,11 +37,6 @@ jobs:
         echo "✅ Application ready for deployment"
         ls -la
     
-    - name: Azure Login
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
       with:
