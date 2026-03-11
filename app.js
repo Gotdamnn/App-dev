@@ -4,8 +4,8 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcrypt');
-const { runMigrations } = require('./init-db');
-const rbac = require('./rbac'); // Import RBAC module
+const { runMigrations } = require('./database/init-db');
+const rbac = require('./src/rbac'); // Import RBAC module
 
 const app = express();
 app.use(express.json());
