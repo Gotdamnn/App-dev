@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - PatientPulse</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/settings.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/sidebar', { activePage: 'settings' }) %>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Settings</h1>
+                <div class="page-subtitle">Manage your account and system preferences</div>
+            </div>
+        </div>
+
+        <div class="settings-container">
+            <!-- Settings Navigation -->
+            <div class="settings-nav">
+                <h3>Settings Menu</h3>
+                <ul class="settings-nav-list">
+                    <li class="settings-nav-item">
+                        <a href="#profile" class="settings-nav-link active" data-section="profile">
+                            <i class="fas fa-user"></i>
+                            Profile Settings
+                        </a>
+                    </li>
+                    <li class="settings-nav-item">
+                        <a href="#system" class="settings-nav-link" data-section="system">
+                            <i class="fas fa-cog"></i>
+                            System Settings
+                        </a>
+                    </li>
+                    <li class="settings-nav-item">
+                        <a href="#security" class="settings-nav-link" data-section="security">
+                            <i class="fas fa-shield-alt"></i>
+                            Security Settings
+                        </a>
+                    </li>
+                    <li class="settings-nav-item">
+                        <a href="#notifications" class="settings-nav-link" data-section="notifications">
+                            <i class="fas fa-bell"></i>
+                            Notification Settings
+                        </a>
+                    </li>
+                    <li class="settings-nav-item">
+                        <a href="#preferences" class="settings-nav-link" data-section="preferences">
+                            <i class="fas fa-sliders-h"></i>
+                            System Preferences
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="settings-content">
+                <!-- Profile Settings Section -->
+                <div id="profile" class="settings-section">
+                    <div class="settings-section-header">
+                        <i class="fas fa-user"></i>
+                        <h2>Profile Settings</h2>
+                    </div>
+                    <div class="settings-section-body">
+                        <!-- Profile Picture -->
+                        <div class="profile-picture-section">
+                            <div class="profile-avatar" id="profileAvatar">
+                                <span id="avatarInitials">AD</span>
+                                <img id="avatarImage" src="" alt="Profile" style="display: none;">
+                            </div>
+                            <div class="profile-upload-info">
+                                <h4>Profile Picture</h4>
+                                <p>Upload a new profile picture. Recommended size: 200x200px. Max file size: 2MB.</p>
+                                <div class="profile-upload-actions">
+                                    <label for="profilePictureUpload" class="btn-settings btn-primary">
+                                        <i class="fas fa-upload"></i> Upload Photo
+                                    </label>
+                                    <input type="file" id="profilePictureUpload" accept="image/*" style="display: none;">
+                                    <button type="button" class="btn-settings btn-secondary" onclick="removeProfilePicture()">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 24px;">
+                            <div class="settings-form-row">
+                                <div class="settings-form-group">
+                                    <label for="adminName">Admin Name</label>
+                                    <input type="text" id="adminName" class="settings-input" value="Admin User" placeholder="Enter your name">
+                                </div>
+                                <div class="settings-form-group">
+                                    <label for="adminEmail">Email Address</label>
+                                    <input type="email" id="adminEmail" class="settings-input" value="admin@patientpulse.com" placeholder="Enter your email">
+                                </div>
+                            </div>
+
+                            <div class="settings-form-group">
+                                <label>Change Password</label>
+                                <div class="settings-form-row three-col">
+                                    <div>
+                                        <input type="password" id="currentPassword" class="settings-input" placeholder="Current Password">
+                                    </div>
+                                    <div>
+                                        <input type="password" id="newPassword" class="settings-input" placeholder="New Password" oninput="checkPasswordStrength(this.value)">
+                                        <div class="password-strength">
+                                            <div class="strength-bar">
+                                                <div id="strengthFill" class="strength-fill"></div>
+                                            </div>
+                                            <div id="strengthText" class="strength-text"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <input type="password" id="confirmPassword" class="settings-input" placeholder="Confirm Password">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="toggle-container">
+                                <div class="toggle-info">
+                                    <span class="toggle-label">Two-Factor Authentication</span>
+                                    <span class="toggle-description">Add an extra layer of security to your account</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="twoFactorAuth">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn-settings btn-secondary" onclick="resetProfileSettings()">Reset</button>
+                        <button type="button" class="btn-settings btn-primary" onclick="saveProfileSettings()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Settings Section -->
+                <div id="system" class="settings-section" style="display: none;">
+                    <div class="settings-section-header">
+                        <i class="fas fa-cog"></i>
+                        <h2>System Settings</h2>
+                    </div>
+                    <div class="settings-section-body">
+                        <!-- Maintenance Mode Warning -->
+                        <div id="maintenanceWarning" class="maintenance-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div class="maintenance-warning-content">
+                                <h4>Maintenance Mode is Active</h4>
+                                <p>The system is currently in maintenance mode. Users cannot access the dashboard.</p>
+                            </div>
+                        </div>
+
+                        <!-- Logo Upload -->
+                        <div class="logo-upload-section">
+                            <div class="logo-preview" id="logoPreview">
+                                <img id="logoImage" src="/images/logo.png" alt="Logo">
+                            </div>
+                            <div class="profile-upload-info">
+                                <h4>Hospital/Clinic Logo</h4>
+                                <p>Upload your organization's logo. Recommended size: 200x80px. Formats: PNG, JPG, SVG.</p>
+                                <div class="profile-upload-actions">
+                                    <label for="logoUpload" class="btn-settings btn-primary">
+                                        <i class="fas fa-upload"></i> Upload Logo
+                                    </label>
+                                    <input type="file" id="logoUpload" accept="image/*" style="display: none;">
+                                    <button type="button" class="btn-settings btn-secondary" onclick="resetLogo()">Reset to Default</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 24px;">
+                            <div class="settings-form-row">
+                                <div class="settings-form-group">
+                                    <label for="hospitalName">Hospital/Clinic Name</label>
+                                    <input type="text" id="hospitalName" class="settings-input" value="PatientPulse Healthcare" placeholder="Enter organization name">
+                                </div>
+                                <div class="settings-form-group">
+                                    <label for="timezone">Timezone</label>
+                                    <select id="timezone" class="settings-select">
+                                        <option value="Asia/Manila">Asia/Manila (GMT+8)</option>
+                                        <option value="America/New_York">America/New_York (EST)</option>
+                                        <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
+                                        <option value="Europe/London">Europe/London (GMT)</option>
+                                        <option value="Europe/Paris">Europe/Paris (CET)</option>
+                                        <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                                        <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                                        <option value="Australia/Sydney">Australia/Sydney (AEDT)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="settings-form-row">
+                                <div class="settings-form-group">
+                                    <label for="dateFormat">Date Format</label>
+                                    <select id="dateFormat" class="settings-select">
+                                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                        <option value="DD-MMM-YYYY">DD-MMM-YYYY</option>
+                                    </select>
+                                </div>
+                                <div class="settings-form-group">
+                                    <label for="timeFormat">Time Format</label>
+                                    <select id="timeFormat" class="settings-select">
+                                        <option value="12h">12 Hour (AM/PM)</option>
+                                        <option value="24h">24 Hour</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="settings-form-group">
+                                <label for="defaultLanguage">Default Language</label>
+                                <select id="defaultLanguage" class="settings-select">
+                                    <option value="en">English</option>
+                                    <option value="es">Español (Spanish)</option>
+                                    <option value="fr">Français (French)</option>
+                                    <option value="de">Deutsch (German)</option>
+                                    <option value="zh">中文 (Chinese)</option>
+                                    <option value="ja">日本語 (Japanese)</option>
+                                    <option value="tl">Filipino (Tagalog)</option>
+                                </select>
+                            </div>
+
+                            <div class="toggle-container">
+                                <div class="toggle-info">
+                                    <span class="toggle-label">Maintenance Mode</span>
+                                    <span class="toggle-description">Enable to temporarily disable access for all users except admins</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="maintenanceMode" onchange="toggleMaintenanceWarning()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn-settings btn-secondary" onclick="resetSystemSettings()">Reset</button>
+                        <button type="button" class="btn-settings btn-primary" onclick="saveSystemSettings()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Security Settings Section -->
+                <div id="security" class="settings-section" style="display: none;">
+                    <div class="settings-section-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h2>Security Settings</h2>
+                    </div>
+                    <div class="settings-section-body">
+                        <h4 style="margin: 0 0 16px 0; color: #374151;">Password Policy</h4>
+                        
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <span class="policy-title">Minimum Password Length</span>
+                            </div>
+                            <div class="policy-input">
+                                <input type="number" id="minPasswordLength" value="8" min="6" max="32">
+                                <span>characters</span>
+                            </div>
+                        </div>
+
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <span class="policy-title">Require Special Characters</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="requireSpecialChars" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <span class="policy-title">Require Numbers</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="requireNumbers" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <span class="policy-title">Require Uppercase Letters</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="requireUppercase" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <h4 style="margin: 24px 0 16px 0; color: #374151;">Session & Login Settings</h4>
+
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <span class="policy-title">Session Timeout Duration</span>
+                            </div>
+                            <div class="policy-input">
+                                <input type="number" id="sessionTimeout" value="30" min="5" max="120">
+                                <span>minutes of inactivity</span>
+                            </div>
+                        </div>
+
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <span class="policy-title">Max Login Attempts</span>
+                            </div>
+                            <div class="policy-input">
+                                <input type="number" id="maxLoginAttempts" value="5" min="3" max="10">
+                                <span>attempts before lockout</span>
+                            </div>
+                        </div>
+
+                        <div class="policy-card">
+                            <div class="policy-header">
+                                <span class="policy-title">Account Lock Duration</span>
+                            </div>
+                            <div class="policy-input">
+                                <input type="number" id="lockDuration" value="15" min="5" max="60">
+                                <span>minutes</span>
+                            </div>
+                        </div>
+
+                        <h4 style="margin: 24px 0 16px 0; color: #374151;">Activity / Audit Logs</h4>
+                        <div class="activity-log">
+                            <div class="activity-item">
+                                <div class="activity-icon login">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Successful Login</div>
+                                    <div class="activity-details">Admin User logged in from 192.168.1.100</div>
+                                </div>
+                                <div class="activity-time">2 minutes ago</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon update">
+                                    <i class="fas fa-edit"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Patient Record Updated</div>
+                                    <div class="activity-details">Modified patient #1234 - John Doe</div>
+                                </div>
+                                <div class="activity-time">15 minutes ago</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon security">
+                                    <i class="fas fa-key"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Password Changed</div>
+                                    <div class="activity-details">Admin password was successfully updated</div>
+                                </div>
+                                <div class="activity-time">1 hour ago</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon error">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Failed Login Attempt</div>
+                                    <div class="activity-details">3 failed attempts from IP 203.45.67.89</div>
+                                </div>
+                                <div class="activity-time">2 hours ago</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon update">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">New Device Added</div>
+                                    <div class="activity-details">IoT device "Heart Monitor #5" registered</div>
+                                </div>
+                                <div class="activity-time">3 hours ago</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 16px; text-align: center;">
+                            <button class="btn-settings btn-secondary" onclick="loadMoreLogs()">
+                                <i class="fas fa-history"></i> Load More Logs
+                            </button>
+                            <button class="btn-settings btn-secondary" onclick="exportLogs()">
+                                <i class="fas fa-download"></i> Export Logs
+                            </button>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn-settings btn-secondary" onclick="resetSecuritySettings()">Reset to Default</button>
+                        <button type="button" class="btn-settings btn-primary" onclick="saveSecuritySettings()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notification Settings Section -->
+                <div id="notifications" class="settings-section" style="display: none;">
+                    <div class="settings-section-header">
+                        <i class="fas fa-bell"></i>
+                        <h2>Notification Settings</h2>
+                    </div>
+                    <div class="settings-section-body">
+                        <h4 style="margin: 0 0 16px 0; color: #374151;">Communication Channels</h4>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Email Notifications</span>
+                                <span class="toggle-description">Receive important updates and alerts via email</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailNotifications" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">SMS Notifications</span>
+                                <span class="toggle-description">Get critical alerts via text message</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="smsNotifications">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <h4 style="margin: 24px 0 16px 0; color: #374151;">Alert Types</h4>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">System Alerts</span>
+                                <span class="toggle-description">Server status, database issues, and system maintenance notifications</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="systemAlerts" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Patient Vital Alerts</span>
+                                <span class="toggle-description">Critical patient vital sign alerts and warnings</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="patientAlerts" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Appointment Reminders</span>
+                                <span class="toggle-description">Upcoming appointment notifications for patients and staff</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="appointmentReminders" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Device Status Alerts</span>
+                                <span class="toggle-description">IoT device connectivity and status notifications</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="deviceAlerts" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Security Alerts</span>
+                                <span class="toggle-description">Login attempts, password changes, and security events</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="securityAlerts" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <h4 style="margin: 24px 0 16px 0; color: #374151;">Notification Schedule</h4>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Quiet Hours</span>
+                                <span class="toggle-description">Pause non-critical notifications during specified hours</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="quietHours">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-form-row" id="quietHoursSettings" style="margin-top: 16px; display: none;">
+                            <div class="settings-form-group">
+                                <label for="quietStart">Quiet Hours Start</label>
+                                <input type="time" id="quietStart" class="settings-input" value="22:00">
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="quietEnd">Quiet Hours End</label>
+                                <input type="time" id="quietEnd" class="settings-input" value="07:00">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn-settings btn-secondary" onclick="resetNotificationSettings()">Reset to Default</button>
+                        <button type="button" class="btn-settings btn-primary" onclick="saveNotificationSettings()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Preferences Section -->
+                <div id="preferences" class="settings-section" style="display: none;">
+                    <div class="settings-section-header">
+                        <i class="fas fa-sliders-h"></i>
+                        <h2>System Preferences</h2>
+                    </div>
+                    <div class="settings-section-body">
+                        <h4 style="margin: 0 0 16px 0; color: #374151;">Theme</h4>
+                        
+                        <div class="theme-options">
+                            <div class="theme-option light active" onclick="selectTheme('light')">
+                                <div class="theme-preview">
+                                    <div class="theme-preview-sidebar">
+                                        <div style="width: 60%; height: 8px; background: #334155; border-radius: 2px; margin-bottom: 4px;"></div>
+                                        <div style="width: 40%; height: 4px; background: #475569; border-radius: 2px;"></div>
+                                    </div>
+                                    <div class="theme-preview-content">
+                                        <div style="width: 80%; height: 10px; background: #d1d5db; border-radius: 2px; margin-bottom: 6px;"></div>
+                                        <div style="width: 60%; height: 6px; background: #e5e7eb; border-radius: 2px;"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-name">
+                                    <i class="fas fa-sun"></i> Light Mode
+                                </div>
+                            </div>
+                            
+                            <div class="theme-option dark" onclick="selectTheme('dark')">
+                                <div class="theme-preview">
+                                    <div class="theme-preview-sidebar">
+                                        <div style="width: 60%; height: 8px; background: #1e293b; border-radius: 2px; margin-bottom: 4px;"></div>
+                                        <div style="width: 40%; height: 4px; background: #334155; border-radius: 2px;"></div>
+                                    </div>
+                                    <div class="theme-preview-content">
+                                        <div style="width: 80%; height: 10px; background: #334155; border-radius: 2px; margin-bottom: 6px;"></div>
+                                        <div style="width: 60%; height: 6px; background: #475569; border-radius: 2px;"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-name">
+                                    <i class="fas fa-moon"></i> Dark Mode
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 style="margin: 24px 0 16px 0; color: #374151;">Default Dashboard View</h4>
+                        
+                        <div class="settings-form-group">
+                            <label for="defaultDashboard">Select default page when logging in</label>
+                            <select id="defaultDashboard" class="settings-select">
+                                <option value="dashboard">Dashboard Overview</option>
+                                <option value="patients">Patient Management</option>
+                                <option value="devices">Device Monitoring</option>
+                                <option value="alerts">Alert Center</option>
+                                <option value="employees">Employee Management</option>
+                                <option value="departments">Department Management</option>
+                            </select>
+                        </div>
+
+                        <h4 style="margin: 24px 0 16px 0; color: #374151;">Display Settings</h4>
+
+                        <div class="settings-form-row">
+                            <div class="settings-form-group">
+                                <label for="itemsPerPage">Items Per Page</label>
+                                <select id="itemsPerPage" class="settings-select">
+                                    <option value="10">10 items</option>
+                                    <option value="25" selected>25 items</option>
+                                    <option value="50">50 items</option>
+                                    <option value="100">100 items</option>
+                                </select>
+                                <div class="form-hint">Number of records shown in tables</div>
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="refreshInterval">Auto Refresh Interval</label>
+                                <select id="refreshInterval" class="settings-select">
+                                    <option value="0">Disabled</option>
+                                    <option value="30">30 seconds</option>
+                                    <option value="60" selected>1 minute</option>
+                                    <option value="300">5 minutes</option>
+                                    <option value="600">10 minutes</option>
+                                </select>
+                                <div class="form-hint">Dashboard data refresh rate</div>
+                            </div>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Compact Mode</span>
+                                <span class="toggle-description">Reduce spacing and show more content on screen</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="compactMode">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Show Sidebar Labels</span>
+                                <span class="toggle-description">Display text labels next to sidebar icons</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="sidebarLabels" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-container">
+                            <div class="toggle-info">
+                                <span class="toggle-label">Enable Animations</span>
+                                <span class="toggle-description">Show smooth transitions and animations</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableAnimations" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn-settings btn-secondary" onclick="resetPreferences()">Reset to Default</button>
+                        <button type="button" class="btn-settings btn-primary" onclick="savePreferences()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2 id="settingsModalTitle">Settings Saved</h2>
+                <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="settingsModalIcon" class="status-icon success">
+                    <i class="fas fa-check"></i>
+                </div>
+                <p id="settingsModalMessage">Your settings have been saved successfully.</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-settings btn-primary" onclick="closeSettingsModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Logout</h2>
+                <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button type="button" class="btn-delete" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content.confirm-modal { background: white; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; z-index: 1001; }
+        .confirm-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; }
+        .confirm-modal .modal-header h2 { margin: 0; font-size: 18px; color: #333; }
+        .confirm-modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+        .confirm-modal .modal-close:hover { color: #333; }
+        .confirm-modal .modal-body { padding: 30px; text-align: center; }
+        .confirm-modal .modal-body p { color: #666; margin: 0; }
+        .status-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
+        .status-icon.warning { background: #fef3c7; color: #f59e0b; }
+        .status-icon.success { background: #dcfce7; color: #22c55e; }
+        .status-icon.error { background: #fee2e2; color: #ef4444; }
+        .confirm-modal .form-actions { display: flex; gap: 12px; padding: 20px; border-top: 1px solid #eee; justify-content: flex-end; }
+        .btn-cancel { padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-cancel:hover { background: #f5f5f5; }
+        .btn-delete { padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-delete:hover { background: #dc2626; }
+    </style>
+
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/settings.js"></script>
+</body>
+</html>

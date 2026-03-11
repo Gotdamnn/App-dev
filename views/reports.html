@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Reports & Complaints - PatientPulse Admin</title>
+    <link rel="stylesheet" href="/css/standard.css">
+    <link rel="stylesheet" href="/css/reports.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar sidebar-dark bg-primary">
+            <div class="sidebar-wrapper bg-dark" style="border-right: 1px solid rgba(255,255,255,0.1);">
+                <%- include('partials/sidebar') %>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="container-fluid">
+                <!-- Header -->
+                <div class="page-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="page-title">
+                                <i class="fas fa-file-alt"></i> Employee Reports & Complaints
+                            </h1>
+                            <p class="text-muted mb-0">Manage and track employee reports, complaints, and disciplinary actions</p>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-primary" id="newReportBtn">
+                                <i class="fas fa-plus"></i> New Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-primary">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted mb-1">Total Reports</p>
+                                        <h4 class="mb-0" id="totalReports">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-warning">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted mb-1">Open Reports</p>
+                                        <h4 class="mb-0" id="openReports">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-danger">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted mb-1">Critical Reports</p>
+                                        <h4 class="mb-0" id="criticalReports">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="stat-icon bg-success">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-muted mb-1">Resolved</p>
+                                        <h4 class="mb-0" id="resolvedReports">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search by name, department...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Open">Open</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Under Review">Under Review</option>
+                                    <option value="Resolved">Resolved</option>
+                                    <option value="Closed">Closed</option>
+                                    <option value="On Hold">On Hold</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Severity</label>
+                                <select class="form-select" id="severityFilter">
+                                    <option value="">All Severity</option>
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Report Type</label>
+                                <select class="form-select" id="reportTypeFilter">
+                                    <option value="">All Types</option>
+                                    <option value="Complaint">Complaint</option>
+                                    <option value="Incident">Incident</option>
+                                    <option value="Disciplinary">Disciplinary</option>
+                                    <option value="Performance">Performance</option>
+                                    <option value="Safety">Safety</option>
+                                    <option value="Conduct">Conduct</option>
+                                </select>
+                            </div>
+                            <div class="col-md-auto d-flex align-items-end">
+                                <button class="btn btn-outline-secondary" id="filterBtn">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                                <button class="btn btn-outline-secondary ms-2" id="resetBtn">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Table -->
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-header-bg">
+                                <tr>
+                                    <th>Report ID</th>
+                                    <th>Employee Name</th>
+                                    <th>Department</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Reported By</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody">
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading reports...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination" id="paginationContainer">
+                    </ul>
+                </nav>
+            </div>
+        </main>
+    </div>
+
+    <!-- New/Edit Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reportModalTitle">New Employee Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reportForm">
+                        <input type="hidden" id="reportId">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Employee *</label>
+                                <select class="form-select" id="employeeSelect" required>
+                                    <option value="">Select Employee</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Department *</label>
+                                <select class="form-select" id="departmentSelect" required>
+                                    <option value="">Select Department</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Report Type *</label>
+                                <select class="form-select" id="reportTypeSelect" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Complaint">Complaint</option>
+                                    <option value="Incident">Incident</option>
+                                    <option value="Disciplinary">Disciplinary</option>
+                                    <option value="Performance">Performance</option>
+                                    <option value="Safety">Safety</option>
+                                    <option value="Conduct">Conduct</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category *</label>
+                                <input type="text" class="form-control" id="categoryInput" placeholder="e.g., Harassment, Tardiness..." required>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Severity *</label>
+                                <select class="form-select" id="severitySelect" required>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Priority *</label>
+                                <select class="form-select" id="prioritySelect" required>
+                                    <option value="Normal">Normal</option>
+                                    <option value="Low">Low</option>
+                                    <option value="High">High</option>
+                                    <option value="Urgent">Urgent</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="titleInput" placeholder="Brief title of the report" required>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">Description *</label>
+                            <textarea class="form-control" id="descriptionInput" rows="5" placeholder="Detailed description of the report..." required></textarea>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">Reported By</label>
+                            <input type="text" class="form-control" id="reportedByInput" placeholder="Your name">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitReportBtn">Submit Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View/Edit Details Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Report Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailsContent">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning" id="editDetailsBtn">Edit</button>
+                    <button type="button" class="btn btn-success" id="resolveBtn">Mark as Resolved</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/js/reports.js"></script>
+</body>
+</html>

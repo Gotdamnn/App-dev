@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs - PatientPulse</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/audit-logs.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/sidebar', { activePage: 'audit-logs' }) %>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Audit Logs</h1>
+                <div class="audit-count" id="auditCount">Loading...</div>
+            </div>
+            <button class="export-btn" onclick="exportAuditLogs()"><i class="fas fa-download"></i> Export</button>
+        </div>
+
+        <!-- Audit Controls - Search & Filter Bar -->
+        <div class="audit-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search by Admin Name...">
+            </div>
+            <div class="filters">
+                <select class="filter-select" id="actionTypeFilter">
+                    <option value="">All Actions</option>
+                    <option value="Create">Create</option>
+                    <option value="Update">Update</option>
+                    <option value="Delete">Delete</option>
+                    <option value="Login">Login</option>
+                    <option value="Logout">Logout</option>
+                    <option value="View">View</option>
+                    <option value="Export">Export</option>
+                </select>
+                <select class="filter-select" id="tableFilter">
+                    <option value="">All Tables</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Patients">Patients</option>
+                    <option value="Employees">Employees</option>
+                    <option value="Departments">Departments</option>
+                    <option value="Devices">Devices</option>
+                    <option value="Settings">Settings</option>
+                </select>
+                <div class="date-range-filter">
+                    <label>From:</label>
+                    <input type="date" id="dateFromFilter" class="filter-date">
+                </div>
+                <div class="date-range-filter">
+                    <label>To:</label>
+                    <input type="date" id="dateToFilter" class="filter-date">
+                </div>
+                <button class="filter-reset-btn" onclick="resetFilters()">
+                    <i class="fas fa-redo-alt"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="table-container">
+            <table class="audit-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Admin Name</th>
+                        <th>Action</th>
+                        <th>Targeted Table</th>
+                        <th>Target ID</th>
+                        <th>IP Address</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                    <!-- Audit logs will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="pagination-btn" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+            <div class="pagination-info">
+                <span id="pageInfo">Page 1 of 1</span>
+            </div>
+            <button class="pagination-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- Details Drawer Modal -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content modal-lg modal-drawer">
+            <div class="modal-header">
+                <h2>Audit Log Details</h2>
+                <button class="modal-close" data-modal="detailsModal">&times;</button>
+            </div>
+            <div class="details-container">
+                <div class="detail-info">
+                    <div class="info-group">
+                        <label>Timestamp:</label>
+                        <span id="detailTimestamp">-</span>
+                    </div>
+                    <div class="info-group">
+                        <label>Admin:</label>
+                        <span id="detailAdmin">-</span>
+                    </div>
+                    <div class="info-group">
+                        <label>Action:</label>
+                        <span id="detailAction">-</span>
+                    </div>
+                    <div class="info-group">
+                        <label>Table:</label>
+                        <span id="detailTable">-</span>
+                    </div>
+                    <div class="info-group">
+                        <label>IP Address:</label>
+                        <span id="detailIp">-</span>
+                    </div>
+                </div>
+
+                <div class="data-comparison">
+                    <div class="comparison-section">
+                        <h3><i class="fas fa-arrow-left"></i> Before State</h3>
+                        <div class="json-block" id="beforeState">
+                            <pre><code>{}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="comparison-section">
+                        <h3><i class="fas fa-arrow-right"></i> After State</h3>
+                        <div class="json-block" id="afterState">
+                            <pre><code>{}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="change-summary" id="changeSummary">
+                    <!-- Change summary will be generated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-modal="detailsModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2>Confirm Logout</h2>
+                <button class="modal-close" data-modal="logoutModal">&times;</button>
+            </div>
+            <p style="margin-bottom: 24px; color: #6b7280;">Are you sure you want to logout?</p>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-modal="logoutModal">Cancel</button>
+                <button type="button" class="btn-danger" onclick="performLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/audit-logs.js"></script>
+</body>
+</html>

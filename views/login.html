@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>PatientPulse Admin Login</title>
+	<link rel="stylesheet" href="../css/login.css">
+	<link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+	<div class="login-wrapper">
+		<div class="login-container">
+			<div class="logo-section">
+				<div class="logo-icon">P</div>
+				<h1 class="logo-text">PatientPulse</h1>
+			</div>
+			<h2>Welcome Back</h2>
+			<p class="subtitle">Sign in to your admin dashboard</p>
+			
+			<form id="login-form">
+				<div class="form-group">
+					<label for="email">Email Address</label>
+					<input type="email" id="email" name="email" placeholder="admin@patientpulse.com" required>
+				</div>
+				
+				<div class="form-group">
+					<label for="password">Password</label>
+					<input type="password" id="password" name="password" placeholder="Enter your password" required>
+				</div>
+				
+				<div class="form-options">
+					<label class="remember-me">
+						<input type="checkbox" name="remember">
+						<span>Remember me</span>
+					</label>
+					<a href="#" class="forgot-password">Forgot password?</a>
+				</div>
+				
+				<button type="submit" class="login-btn">Sign In</button>
+			</form>
+			
+			<div class="footer-links">
+				<a href="#" class="footer-link"><i class="fas fa-headset"></i> Contact Support</a>
+				<a href="#" class="footer-link"><i class="fas fa-circle"></i> System Status</a>
+			</div>
+		</div>
+		
+		<div class="login-footer">
+			<p>&copy; 2026 PatientPulse Healthcare Systems | Secure • HIPAA Compliant • Encrypted</p>
+		</div>
+	</div>
+	
+	<script src="../js/login.js"></script>
+</body>
+</html>

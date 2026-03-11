@@ -25,13 +25,11 @@ jobs:
         node-version: '24.x'
     
     - name: Install dependencies
-      working-directory: ./backend
       run: |
         npm ci --production
         echo "✅ Dependencies installed"
     
     - name: Verify application
-      working-directory: ./backend
       run: |
         echo "✅ Application ready for deployment"
         ls -la
@@ -46,7 +44,7 @@ jobs:
       with:
         app-name: 'patientpulse-app'
         publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-        package: './backend'
+        package: '.'
         clean: true
     
     - name: Post deployment verification
