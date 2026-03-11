@@ -287,10 +287,16 @@ function openNewReportModal() {
 // Submit report
 async function submitReport() {
     const form = document.getElementById('reportForm');
+    const submitBtn = document.getElementById('submitReportBtn');
+    
     if (!form.checkValidity()) {
         form.classList.add('was-validated');
         return;
     }
+
+    // Disable button to prevent double submission
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
 
     try {
         const employeeSelect = document.getElementById('employeeSelect');
@@ -336,6 +342,10 @@ async function submitReport() {
     } catch (error) {
         console.error('Error:', error);
         showAlert('Failed to submit report', 'danger');
+    } finally {
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Report';
     }
 }
 
