@@ -44,22 +44,8 @@ jobs:
       uses: azure/webapps-deploy@v3
       with:
         app-name: 'patientpulse-app'
-        slot-name: 'production'
         publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
         package: './backend'
-    
-    - name: Configure App Settings
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az webapp config appsettings set --name patientpulse-app --resource-group <YOUR_RESOURCE_GROUP> \
-            --settings NODE_ENV=production \
-            DB_USER=postgres \
-            DB_PASSWORD=${{ secrets.SUPABASE_PASSWORD }} \
-            DB_HOST="db.eeubefsvavmguwmapgpi.supabase.co" \
-            DB_PORT=5432 \
-            DB_NAME=postgres \
-            DB_SSL=true
     
     - name: Post deployment verification
       run: |
