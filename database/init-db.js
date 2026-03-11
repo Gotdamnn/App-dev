@@ -373,24 +373,7 @@ async function ensureStaffTable() {
             )
         `);
         
-        // Insert default staff members
-        await client.query(`
-            INSERT INTO staff (name, email, role, department, status) VALUES
-                ('John Administrator', 'john.admin@hospital.com', 'Super Admin', 'Administration', 'Active'),
-                ('Sarah Manager', 'sarah.manager@hospital.com', 'Admin', 'IT', 'Active'),
-                ('Michael Johnson', 'michael.johnson@hospital.com', 'Manager', 'HR', 'Active'),
-                ('Emily Davis', 'emily.davis@hospital.com', 'Supervisor', 'Nursing', 'Active'),
-                ('Robert Wilson', 'robert.wilson@hospital.com', 'Admin', 'Medical Records', 'Inactive'),
-                ('Admin User', 'admin@patientpulse.com', 'Super Admin', 'Administration', 'Active'),
-                ('John Doe', 'john.doe@hospital.com', 'Manager', 'Cardiology', 'Active'),
-                ('Jane Smith', 'jane.smith@hospital.com', 'Supervisor', 'Nursing', 'Active'),
-                ('David Brown', 'david.brown@hospital.com', 'Manager', 'Surgery', 'Active'),
-                ('Lisa Anderson', 'lisa.anderson@hospital.com', 'Supervisor', 'Emergency', 'Active'),
-                ('Mark Taylor', 'mark.taylor@hospital.com', 'Admin', 'IT', 'Active')
-            ON CONFLICT (email) DO NOTHING
-        `);
-        
-        // Verify data was inserted
+        // Verify staff table exists
         const result = await client.query('SELECT COUNT(*) as count FROM staff');
         const count = result.rows[0].count;
         

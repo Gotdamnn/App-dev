@@ -768,7 +768,7 @@ app.post('/api/employees/:id/assign-role', async (req, res) => {
             staffRecord = updateResult.rows[0];
 
             // Log audit
-            logAudit('staff', 'Update Staff from Employee', staffRecord.id, staffResult.rows[0], staffRecord, assignedBy);
+            logAudit('staff', 'Update', staffRecord.id, staffResult.rows[0], staffRecord, assignedBy);
         } else {
             // Create new staff record
             const insertResult = await pool.query(
@@ -1492,7 +1492,7 @@ app.post('/api/permissions/config', checkPermission('manage_permissions'), async
     
     try {
         // Log this permission change
-        logAudit('permissions', 'Update Configuration', null, null, { rolePermissions });
+        logAudit('permissions', 'Update', null, null, { rolePermissions });
         
         // In production, save this to database or config file
         // For now, we acknowledge the update
