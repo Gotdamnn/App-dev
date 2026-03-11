@@ -10,7 +10,6 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 jobs:
   build-and-deploy:
@@ -24,17 +23,16 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '24.x'
-        cache: 'npm'
-        cache-dependency-path: 'backend/package-lock.json'
     
     - name: Install dependencies
       working-directory: ./backend
-      run: npm ci --production
+      run: |
+        npm ci --production
+        echo "✅ Dependencies installed"
     
     - name: Verify application
       working-directory: ./backend
       run: |
-        echo "✅ Dependencies installed"
         echo "✅ Application ready for deployment"
         ls -la
     
