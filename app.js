@@ -6,10 +6,40 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const { runMigrations } = require('./database/init-db');
 const rbac = require('./src/rbac'); // Import RBAC module
+const { initializeEmailRoutes } = require('./src/email-verification-routes'); // Import email routes
+const { initializePasswordResetRoutes } = require('./src/password-reset-routes'); // Import password reset routes
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+// Configure CORS to allow requests from the client application
+app.use(cors({
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:50611',
+            'http://localhost:50612',
+            'http://localhost:50613',
+            'http://localhost:3001',
+            'http://localhost:5000',
+            'http://127.0.0.1:50611',
+            'http://127.0.0.1:50612',
+            'http://127.0.0.1:50613',
+            'http://127.0.0.1:3001',
+            'http://127.0.0.1:5000'
+        ];
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200
+}));
 
 // EJS view engine setup
 app.set('view engine', 'ejs');
@@ -84,6 +114,14 @@ pool.on('error', (err) => {
 
 // Initialize RBAC module with pool
 rbac.setPool(pool);
+
+// Initialize and mount email verification routes
+const emailRoutes = initializeEmailRoutes(pool);
+app.use('/api', emailRoutes);
+
+// Initialize and mount password reset routes
+const passwordResetRoutes = initializePasswordResetRoutes(pool);
+app.use('/api', passwordResetRoutes);
 
 // ===== HELPER FUNCTION TO EXTRACT CLIENT IP =====
 function getClientIp(req) {

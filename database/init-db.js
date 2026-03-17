@@ -378,6 +378,8 @@ async function runMigrations() {
         await ensureStaffPermissionsTable();
         await ensurePatientVitalsTable();
         await ensureNotificationsTable();
+        await ensureEmailVerificationTable();
+        await ensurePasswordResetTokensTable();
         await syncAdminsToStaff();
         await fixCreateNotificationFunction();
         
@@ -416,6 +418,93 @@ async function ensureStaffTable() {
         if (!err.message.includes('already exists')) {
             console.error('⚠️  Error ensuring staff table:', err.message);
         }
+    } finally {
+        client.release();
+    }
+}
+
+// Ensure email verification tokens table exists
+async function ensureEmailVerificationTable() {
+    const client = await pool.connect();
+    try {
+        const checkSQL = `
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_name = 'email_verification_tokens'
+            ) as table_exists;
+        `;
+        const result = await client.query(checkSQL);
+        
+        if (!result.rows[0].table_exists) {
+            const createSQL = `
+                CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    token VARCHAR(255) UNIQUE NOT NULL,
+                    is_verified BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP + INTERVAL '24 hours',
+                    verified_at TIMESTAMP NULL
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_email_verification_email ON email_verification_tokens(email);
+                CREATE INDEX IF NOT EXISTS idx_email_verification_token ON email_verification_tokens(token);
+                CREATE INDEX IF NOT EXISTS idx_email_verification_status ON email_verification_tokens(is_verified);
+            `;
+            
+            await client.query(createSQL);
+            console.log('✅ Created email_verification_tokens table');
+        } else {
+            console.log('✅ Email verification tokens table already exists');
+        }
+        return true;
+    } catch (err) {
+        console.error('❌ Failed to ensure email verification table:', err.message);
+        return false;
+    } finally {
+        client.release();
+    }
+}
+
+// Ensure password reset tokens table exists
+async function ensurePasswordResetTokensTable() {
+    const client = await pool.connect();
+    try {
+        const checkSQL = `
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_name = 'password_reset_tokens'
+            ) as table_exists;
+        `;
+        const result = await client.query(checkSQL);
+        
+        if (!result.rows[0].table_exists) {
+            const createSQL = `
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+                    email VARCHAR(255) NOT NULL,
+                    token VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 hour',
+                    used_at TIMESTAMP NULL,
+                    UNIQUE(user_id)
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_password_reset_email ON password_reset_tokens(email);
+                CREATE INDEX IF NOT EXISTS idx_password_reset_user_id ON password_reset_tokens(user_id);
+                CREATE INDEX IF NOT EXISTS idx_password_reset_created ON password_reset_tokens(created_at);
+            `;
+            
+            await client.query(createSQL);
+            console.log('✅ Created password_reset_tokens table');
+        } else {
+            console.log('✅ Password reset tokens table already exists');
+        }
+        return true;
+    } catch (err) {
+        console.error('❌ Failed to ensure password reset tokens table:', err.message);
+        return false;
     } finally {
         client.release();
     }
