@@ -244,8 +244,43 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// Alternative login endpoint for mobile/external clients
+app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    const clientIp = getClientIp(req);
+    try {
+        const result = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
+        if (result.rows.length > 0) {
+            const admin = result.rows[0];
+            const validPassword = await bcrypt.compare(password, admin.password);
+            if (validPassword) {
+                logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp);
+                res.json({ success: true, user: admin });
+            } else {
+                res.status(401).json({ success: false, message: 'Invalid credentials' });
+            }
+        } else {
+            res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Logout endpoint
 app.post('/api/logout', async (req, res) => {
+    const { username, email } = req.body;
+    const clientIp = getClientIp(req);
+    try {
+        logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp);
+        res.json({ success: true, message: 'Logged out successfully' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Alternative logout endpoint for mobile/external clients
+app.post('/api/auth/logout', async (req, res) => {
     const { username, email } = req.body;
     const clientIp = getClientIp(req);
     try {
