@@ -15,21 +15,11 @@ app.use(express.json());
 // Configure CORS to allow requests from the client application
 app.use(cors({
     origin: function(origin, callback) {
-        const allowedOrigins = [
-            'http://localhost:50611',
-            'http://localhost:50612',
-            'http://localhost:50613',
-            'http://localhost:3001',
-            'http://localhost:5000',
-            'http://127.0.0.1:50611',
-            'http://127.0.0.1:50612',
-            'http://127.0.0.1:50613',
-            'http://127.0.0.1:3001',
-            'http://127.0.0.1:5000'
-        ];
-        
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow all localhost/127.0.0.1 origins (for development Dart server on dynamic ports)
+        // and specific production origins
+        if (!origin || 
+            origin.startsWith('http://localhost:') || 
+            origin.startsWith('http://127.0.0.1:')) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
