@@ -124,11 +124,11 @@ function getClientIp(req) {
 }
 
 // ===== AUDIT LOGGING HELPER =====
-async function logAudit(tableName, action, targetId, beforeState = null, afterState = null, adminName = 'Admin', ipAddress = null) {
+async function logAudit(tableName, action, targetId, beforeState = null, afterState = null, adminName = 'Admin', ipAddress = null, adminId = null) {
     try {
         await pool.query(
-            'INSERT INTO audit_logs (admin_name, action, table_name, target_id, ip_address, before_state, after_state) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [adminName, action, tableName, targetId, ipAddress || 'Unknown', beforeState ? JSON.stringify(beforeState) : null, afterState ? JSON.stringify(afterState) : null]
+            'INSERT INTO audit_logs (admin_id, admin_name, action, table_name, target_id, ip_address, before_state, after_state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [adminId, adminName, action, tableName, targetId, ipAddress || 'Unknown', beforeState ? JSON.stringify(beforeState) : null, afterState ? JSON.stringify(afterState) : null]
         );
     } catch (err) {
         console.error(`Audit logging error for ${tableName}:`, err.message);
@@ -259,7 +259,7 @@ app.post('/api/login', async (req, res) => {
             const admin = result.rows[0];
             const validPassword = await bcrypt.compare(password, admin.password);
             if (validPassword) {
-                logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp);
+                await logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp, admin.id);
                 res.json({ success: true, user: admin });
             } else {
                 res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -282,7 +282,7 @@ app.post('/api/auth/login', async (req, res) => {
             const admin = result.rows[0];
             const validPassword = await bcrypt.compare(password, admin.password);
             if (validPassword) {
-                logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp);
+                await logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp, admin.id);
                 res.json({ success: true, user: admin });
             } else {
                 res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -297,10 +297,10 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Logout endpoint
 app.post('/api/logout', async (req, res) => {
-    const { username, email } = req.body;
+    const { username, email, id } = req.body;
     const clientIp = getClientIp(req);
     try {
-        logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp);
+        await logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp, id);
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -309,10 +309,10 @@ app.post('/api/logout', async (req, res) => {
 
 // Alternative logout endpoint for mobile/external clients
 app.post('/api/auth/logout', async (req, res) => {
-    const { username, email } = req.body;
+    const { username, email, id } = req.body;
     const clientIp = getClientIp(req);
     try {
-        logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp);
+        await logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp, id);
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -356,7 +356,7 @@ app.post('/api/auth/register', async (req, res) => {
         );
         
         // Log the registration
-        logAudit('patients', 'Patient Registration', newPatient.id, null, { 
+        await logAudit('patients', 'Patient Registration', newPatient.id, null, { 
             patient_id: newPatient.patient_id,
             email: newPatient.email, 
             name: newPatient.name 
@@ -400,7 +400,7 @@ app.put('/api/settings', async (req, res) => {
     const settingsData = req.body;
     try {
         // Log the settings change
-        logAudit('settings', 'Update', 1, 
+        await logAudit('settings', 'Update', 1, 
             { type: 'System Settings' }, 
             settingsData
         );
@@ -470,7 +470,7 @@ app.post('/api/patients', async (req, res) => {
             );
         }
         
-        logAudit('patients', 'Create', patient.id, null, patient);
+        await logAudit('patients', 'Create', patient.id, null, patient);
         
         // Return patient data with success flag for mobile app
         res.status(201).json({
@@ -514,7 +514,7 @@ app.put('/api/patients/:id', async (req, res) => {
             );
         }
         
-        logAudit('patients', 'Update', req.params.id, beforeState, result.rows[0]);
+        await logAudit('patients', 'Update', req.params.id, beforeState, result.rows[0]);
         res.status(200).json({
             success: true,
             message: 'Patient updated successfully',
@@ -532,7 +532,7 @@ app.delete('/api/patients/:id', async (req, res) => {
         const beforeState = beforeResult.rows[0];
         const result = await pool.query('DELETE FROM patients WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            logAudit('patients', 'Delete', req.params.id, beforeState, null);
+            await logAudit('patients', 'Delete', req.params.id, beforeState, null);
             res.json({ success: true, message: 'Patient deleted' });
         } else {
             res.status(404).json({ error: 'Patient not found' });
@@ -575,7 +575,7 @@ app.post('/api/devices', async (req, res) => {
             'INSERT INTO devices (name, device_id, board_type, location, status, signal_strength, last_data_time) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING *',
             [name, device_id, board_type, location, status, signal_strength]
         );
-        logAudit('devices', 'Create', result.rows[0].id, null, result.rows[0]);
+        await logAudit('devices', 'Create', result.rows[0].id, null, result.rows[0]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -593,7 +593,7 @@ app.put('/api/devices/:id', async (req, res) => {
             [name, device_id, board_type, location, status, signal_strength, req.params.id]
         );
         if (result.rows.length > 0) {
-            logAudit('devices', 'Update', req.params.id, beforeState, result.rows[0]);
+            await logAudit('devices', 'Update', req.params.id, beforeState, result.rows[0]);
             res.json(result.rows[0]);
         } else {
             res.status(404).json({ error: 'Device not found' });
@@ -610,7 +610,7 @@ app.delete('/api/devices/:id', async (req, res) => {
         const beforeState = beforeResult.rows[0];
         const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            logAudit('devices', 'Delete', req.params.id, beforeState, null);
+            await logAudit('devices', 'Delete', req.params.id, beforeState, null);
             res.json({ success: true, message: 'Device deleted' });
         } else {
             res.status(404).json({ error: 'Device not found' });
@@ -715,7 +715,7 @@ app.post('/api/departments', async (req, res) => {
              operating_hours_start || null, operating_hours_end || null, operating_days || 'Mon-Fri',
              cost_center_code]
         );
-        logAudit('departments', 'Create', result.rows[0].department_id, null, result.rows[0]);
+        await logAudit('departments', 'Create', result.rows[0].department_id, null, result.rows[0]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         if (err.code === '23505') {
@@ -760,7 +760,7 @@ app.put('/api/departments/:id', async (req, res) => {
              cost_center_code, req.params.id]
         );
         if (result.rows.length > 0) {
-            logAudit('departments', 'Update', req.params.id, beforeState, result.rows[0]);
+            await logAudit('departments', 'Update', req.params.id, beforeState, result.rows[0]);
             res.json(result.rows[0]);
         } else {
             res.status(404).json({ error: 'Department not found' });
@@ -803,7 +803,7 @@ app.delete('/api/departments/:id', async (req, res) => {
         const beforeState = beforeResult.rows[0];
         const result = await pool.query('DELETE FROM departments WHERE department_id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            logAudit('departments', 'Delete', req.params.id, beforeState, null);
+            await logAudit('departments', 'Delete', req.params.id, beforeState, null);
             res.json({ success: true, message: 'Department deleted' });
         } else {
             res.status(404).json({ error: 'Department not found' });
@@ -900,7 +900,7 @@ app.post('/api/employees', async (req, res) => {
              email, phone_number, address,
              department_id, job_title, employment_type, hire_date, employment_status]
         );
-        logAudit('employees', 'Create', result.rows[0].employee_id, null, result.rows[0]);
+        await logAudit('employees', 'Create', result.rows[0].employee_id, null, result.rows[0]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1258,53 +1258,7 @@ app.get('/api/dashboard/activity', async (req, res) => {
     }
 });
 
-// ===== AUDIT LOGS VIEW API =====
-app.get('/api/audit-logs', async (req, res) => {
-    try {
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-        const action = req.query.action || null;
-        const table = req.query.table || null;
-        
-        let query = 'SELECT * FROM audit_logs WHERE 1=1';
-        const params = [];
-        
-        // Apply filters
-        if (action) {
-            query += ` AND action = $${params.length + 1}`;
-            params.push(action);
-        }
-        
-        if (table) {
-            query += ` AND table_name = $${params.length + 1}`;
-            params.push(table);
-        }
-        
-        // Get total count
-        const countQuery = query.replace(/SELECT \*/, 'SELECT COUNT(*) as count');
-        const countResult = await pool.query(countQuery, params);
-        const total = parseInt(countResult.rows[0].count);
-        
-        // Get paginated results
-        query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-        params.push(limit, offset);
-        
-        const result = await pool.query(query, params);
-        
-        res.json({
-            total: total,
-            count: result.rows.length,
-            limit: limit,
-            offset: offset,
-            logs: result.rows
-        });
-    } catch (err) {
-        console.error('Audit logs error:', err.message);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ===== STAFF STATISTICS API =====
+// ===== STAFF STATISTICS API ===
 app.get('/api/staff-statistics', async (req, res) => {
     try {
         // Total staff by job title
