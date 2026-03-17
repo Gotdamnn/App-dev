@@ -889,20 +889,32 @@ app.post('/api/employees', async (req, res) => {
         email, phone_number, address,
         department_id, job_title, employment_type, hire_date, employment_status
     } = req.body;
+    
+    const clientIp = getClientIp(req);
+    
     try {
+        // Validate required fields
+        if (!first_name || !last_name || !email) {
+            return res.status(400).json({ error: 'first_name, last_name, and email are required' });
+        }
+        
+        // Ensure department_id is an integer or null
+        const dept_id = department_id ? parseInt(department_id) : null;
+        
         const result = await pool.query(
             `INSERT INTO employees (
                 first_name, middle_name, last_name, gender, date_of_birth,
                 email, phone_number, address,
                 department_id, job_title, employment_type, hire_date, employment_status
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
-            [first_name, middle_name, last_name, gender, date_of_birth,
-             email, phone_number, address,
-             department_id, job_title, employment_type, hire_date, employment_status]
+            [first_name, middle_name || null, last_name, gender || null, date_of_birth || null,
+             email, phone_number || null, address || null,
+             dept_id, job_title || null, employment_type || null, hire_date || null, employment_status || 'Active']
         );
-        await logAudit('employees', 'Create', result.rows[0].employee_id, null, result.rows[0]);
+        await logAudit('employees', 'Create', result.rows[0].employee_id, null, result.rows[0], email, clientIp);
         res.status(201).json(result.rows[0]);
     } catch (err) {
+        console.error('Employee insert error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -914,9 +926,16 @@ app.put('/api/employees/:id', async (req, res) => {
         email, phone_number, address,
         department_id, job_title, employment_type, hire_date, employment_status
     } = req.body;
+    
+    const clientIp = getClientIp(req);
+    
     try {
         const beforeResult = await pool.query('SELECT * FROM employees WHERE employee_id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
+        
+        // Ensure department_id is an integer or null
+        const dept_id = department_id ? parseInt(department_id) : null;
+        
         const result = await pool.query(
             `UPDATE employees SET 
                 first_name = $1, middle_name = $2, last_name = $3, gender = $4, date_of_birth = $5,
@@ -924,17 +943,18 @@ app.put('/api/employees/:id', async (req, res) => {
                 department_id = $9, job_title = $10, employment_type = $11, hire_date = $12, employment_status = $13,
                 updated_at = CURRENT_TIMESTAMP 
             WHERE employee_id = $14 RETURNING *`,
-            [first_name, middle_name, last_name, gender, date_of_birth,
-             email, phone_number, address,
-             department_id, job_title, employment_type, hire_date, employment_status, req.params.id]
+            [first_name || null, middle_name || null, last_name || null, gender || null, date_of_birth || null,
+             email || null, phone_number || null, address || null,
+             dept_id, job_title || null, employment_type || null, hire_date || null, employment_status || 'Active', req.params.id]
         );
         if (result.rows.length > 0) {
-            logAudit('employees', 'Update', req.params.id, beforeState, result.rows[0]);
+            logAudit('employees', 'Update', req.params.id, beforeState, result.rows[0], email, clientIp);
             res.json(result.rows[0]);
         } else {
             res.status(404).json({ error: 'Employee not found' });
         }
     } catch (err) {
+        console.error('Employee update error:', err);
         res.status(500).json({ error: err.message });
     }
 });

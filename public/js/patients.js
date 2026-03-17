@@ -51,7 +51,6 @@ function confirmDelete() {
     if (pendingDeletePatientId !== null) {
         deletePatientFromDB(pendingDeletePatientId);
     }
-    closeConfirmModal();
 }
 
 // Show view patient modal
@@ -533,12 +532,16 @@ async function deletePatientFromDB(patientId) {
         if (response.ok) {
             allPatients = allPatients.filter(p => p.id !== patientId);
             filterPatients();
+            closeConfirmModal();
             closeModal('editPatientModal');
             showStatusModal('Success', 'Patient deleted successfully!', true);
+        } else {
+            showStatusModal('Error', 'Failed to delete patient', false);
         }
     } catch (error) {
         console.error('Error deleting patient:', error);
-        showStatusModal('Error', 'Error deleting patient', false);
+        closeConfirmModal();
+        showStatusModal('Error', 'Error deleting patient: ' + error.message, false);
     }
 }
 

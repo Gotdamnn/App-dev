@@ -363,21 +363,28 @@ async function addNewEmployee(e) {
         first_name: document.getElementById('addFirstName').value.trim(),
         middle_name: document.getElementById('addMiddleName').value.trim() || null,
         last_name: document.getElementById('addLastName').value.trim(),
-        gender: document.getElementById('addGender').value,
-        date_of_birth: document.getElementById('addDateOfBirth').value,
+        gender: document.getElementById('addGender').value || null,
+        date_of_birth: document.getElementById('addDateOfBirth').value || null,
         email: document.getElementById('addEmail').value.trim(),
-        phone_number: document.getElementById('addPhone').value.trim(),
+        phone_number: document.getElementById('addPhone').value.trim() || null,
         address: document.getElementById('addAddress').value.trim() || null,
         department_id: document.getElementById('addDepartment').value || null,
-        job_title: document.getElementById('addJobTitle').value,
-        employment_type: document.getElementById('addEmploymentType').value,
-        hire_date: document.getElementById('addHireDate').value,
-        employment_status: document.getElementById('addEmploymentStatus').value
+        job_title: document.getElementById('addJobTitle').value || null,
+        employment_type: document.getElementById('addEmploymentType').value || null,
+        hire_date: document.getElementById('addHireDate').value || null,
+        employment_status: document.getElementById('addEmploymentStatus').value || 'Active'
     };
 
     // Validate required fields
     if (!employeeData.first_name || !employeeData.last_name || !employeeData.email) {
-        showStatusModal('Error', 'Please fill in all required fields.', 'error');
+        showStatusModal('Error', 'First Name, Last Name, and Email are required.', 'error');
+        return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(employeeData.email)) {
+        showStatusModal('Error', 'Please enter a valid email address.', 'error');
         return;
     }
 
@@ -391,7 +398,13 @@ async function addNewEmployee(e) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorText = await response.text();
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch {
+                errorData = { error: errorText || 'Failed to add employee' };
+            }
             throw new Error(errorData.error || 'Failed to add employee');
         }
 
