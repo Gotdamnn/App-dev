@@ -47,6 +47,9 @@
                     <tr>
                         <th><input type="checkbox"></th>
                         <th>Patient</th>
+                        <th>Email</th>
+                        <th>Age</th>
+                        <th>Gender</th>
                         <th>Patient ID</th>
                         <th>Status</th>
                         <th>Body Temperature</th>
@@ -80,6 +83,26 @@
                 <div class="form-group">
                     <label for="addPatientEmail">Email Address *</label>
                     <input type="email" id="addPatientEmail" name="email" placeholder="patient@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addPatientAge">Age *</label>
+                    <input type="number" id="addPatientAge" name="age" min="0" max="150" placeholder="Enter age" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addPatientGender">Gender *</label>
+                    <select id="addPatientGender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="addPatientPassword">Password *</label>
+                    <input type="password" id="addPatientPassword" name="password" placeholder="Enter password" minlength="6" required>
                 </div>
 
                 <div class="form-group">
@@ -130,6 +153,25 @@
                 <div class="form-group">
                     <label for="patientEmail">Email Address</label>
                     <input type="email" id="patientEmail" name="patientEmail" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="patientAge">Age</label>
+                    <input type="number" id="patientAge" name="patientAge" min="0" max="150" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="patientGender">Gender</label>
+                    <select id="patientGender" name="patientGender" required>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="patientPassword">Password (leave blank to keep current)</label>
+                    <input type="password" id="patientPassword" name="patientPassword" placeholder="Enter new password" minlength="6">
                 </div>
 
                 <div class="form-group">
@@ -214,6 +256,18 @@
                     <div style="display: flex; justify-content: space-between; padding: 12px; background: #f9fafb; border-radius: 8px;">
                         <span style="color: #6b7280;">Email</span>
                         <span id="viewPatientEmail" style="font-weight: 600; color: #1f2937;">email@example.com</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <span style="color: #6b7280;">Age</span>
+                        <span id="viewPatientAge" style="font-weight: 600; color: #1f2937;">N/A</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <span style="color: #6b7280;">Gender</span>
+                        <span id="viewPatientGender" style="font-weight: 600; color: #1f2937;">N/A</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <span style="color: #6b7280;">Account Status</span>
+                        <span id="viewPatientAccountStatus" style="font-weight: 600; color: #1f2937;">Active</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 12px; background: #f9fafb; border-radius: 8px;">
                         <span style="color: #6b7280;">Body Temperature</span>

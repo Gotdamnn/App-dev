@@ -71,6 +71,9 @@ function showViewPatientModal(patient) {
     document.getElementById('viewPatientName').textContent = patient.name;
     document.getElementById('viewPatientId').textContent = patient.patient_id || patient.id;
     document.getElementById('viewPatientEmail').textContent = patient.email || 'N/A';
+    document.getElementById('viewPatientAge').textContent = patient.age || 'N/A';
+    document.getElementById('viewPatientGender').textContent = patient.gender || 'N/A';
+    document.getElementById('viewPatientAccountStatus').textContent = patient.password ? 'Password Set' : 'No Password';
     document.getElementById('viewPatientStatus').textContent = patient.status === 'active' ? 'Active' : 'Inactive';
     document.getElementById('viewPatientStatus').className = 'status-badge ' + statusClass;
     document.getElementById('viewPatientTemp').textContent = temp;
@@ -268,7 +271,7 @@ function renderPatients(patients) {
     if (patients.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                <td colspan="10" style="text-align: center; padding: 40px; color: #666;">
                     <i class="fas fa-users" style="font-size: 48px; margin-bottom: 16px; color: #ccc; display: block;"></i>
                     No patients found. Click "Add Patient" to add your first patient.
                 </td>
@@ -309,10 +312,12 @@ function createPatientRow(patient) {
                 <div class="patient-avatar" style="background-color: ${patient.avatar_color || '#2563eb'}">${patient.name.substring(0, 2).toUpperCase()}</div>
                 <div class="patient-info">
                     <div class="patient-name">${patient.name}</div>
-                    <div class="patient-email">${patient.email || 'N/A'}</div>
                 </div>
             </div>
         </td>
+        <td>${patient.email || 'N/A'}</td>
+        <td>${patient.age || 'N/A'}</td>
+        <td>${patient.gender || 'N/A'}</td>
         <td>${patient.patient_id || patient.id}</td>
         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
         <td><span class="temperature ${tempClass}">${tempDisplay}</span></td>
