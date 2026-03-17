@@ -238,10 +238,10 @@ function renderSearchResults(results, query) {
         return;
     }
     
-    // Patients
+    // Patients - Show all results
     if (results.patients?.length) {
         html += `<div class="search-category">Patients (${results.patients.length})</div>`;
-        results.patients.slice(0, 3).forEach(patient => {
+        results.patients.forEach(patient => {
             html += `
                 <a href="/patients?id=${patient.id}" class="search-result-item">
                     <div class="search-result-icon patient"><i class="fas fa-user"></i></div>
@@ -254,10 +254,10 @@ function renderSearchResults(results, query) {
         });
     }
     
-    // Employees
+    // Employees - Show all results
     if (results.employees?.length) {
         html += `<div class="search-category">Employees (${results.employees.length})</div>`;
-        results.employees.slice(0, 3).forEach(emp => {
+        results.employees.forEach(emp => {
             html += `
                 <a href="/employees?id=${emp.employee_id}" class="search-result-item">
                     <div class="search-result-icon employee"><i class="fas fa-user-md"></i></div>
@@ -270,10 +270,10 @@ function renderSearchResults(results, query) {
         });
     }
     
-    // Departments
+    // Departments - Show all results
     if (results.departments?.length) {
         html += `<div class="search-category">Departments (${results.departments.length})</div>`;
-        results.departments.slice(0, 3).forEach(dept => {
+        results.departments.forEach(dept => {
             html += `
                 <a href="/departments?id=${dept.department_id}" class="search-result-item">
                     <div class="search-result-icon department"><i class="fas fa-building"></i></div>

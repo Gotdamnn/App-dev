@@ -85,12 +85,22 @@ pool.on('error', (err) => {
 // Initialize RBAC module with pool
 rbac.setPool(pool);
 
+// ===== HELPER FUNCTION TO EXTRACT CLIENT IP =====
+function getClientIp(req) {
+    // Check for IP from various proxy headers
+    return (req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+            req.headers['x-real-ip'] ||
+            req.connection.remoteAddress ||
+            req.socket.remoteAddress ||
+            'Unknown');
+}
+
 // ===== AUDIT LOGGING HELPER =====
-async function logAudit(tableName, action, targetId, beforeState = null, afterState = null, adminName = 'Admin') {
+async function logAudit(tableName, action, targetId, beforeState = null, afterState = null, adminName = 'Admin', ipAddress = null) {
     try {
         await pool.query(
-            'INSERT INTO audit_logs (admin_name, action, table_name, target_id, before_state, after_state) VALUES ($1, $2, $3, $4, $5, $6)',
-            [adminName, action, tableName, targetId, beforeState ? JSON.stringify(beforeState) : null, afterState ? JSON.stringify(afterState) : null]
+            'INSERT INTO audit_logs (admin_name, action, table_name, target_id, ip_address, before_state, after_state) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [adminName, action, tableName, targetId, ipAddress || 'Unknown', beforeState ? JSON.stringify(beforeState) : null, afterState ? JSON.stringify(afterState) : null]
         );
     } catch (err) {
         console.error(`Audit logging error for ${tableName}:`, err.message);
@@ -214,13 +224,14 @@ function checkPermission(requiredPermission) {
 // ===== AUTHENTICATION =====
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const result = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
         if (result.rows.length > 0) {
             const admin = result.rows[0];
             const validPassword = await bcrypt.compare(password, admin.password);
             if (validPassword) {
-                logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username });
+                logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp);
                 res.json({ success: true, user: admin });
             } else {
                 res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -236,8 +247,9 @@ app.post('/api/login', async (req, res) => {
 // Logout endpoint
 app.post('/api/logout', async (req, res) => {
     const { username, email } = req.body;
+    const clientIp = getClientIp(req);
     try {
-        logAudit('users', 'Logout', null, null, { email: email, username: username });
+        logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp);
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -286,7 +298,13 @@ app.put('/api/settings', async (req, res) => {
 // Get all patients
 app.get('/api/patients', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM patients ORDER BY created_at DESC');
+        const result = await pool.query(
+            `SELECT p.*, 
+                (SELECT body_temperature FROM patient_vitals WHERE patient_id = p.id AND body_temperature IS NOT NULL ORDER BY recorded_at DESC LIMIT 1) as latest_temperature,
+                (SELECT recorded_at FROM patient_vitals WHERE patient_id = p.id AND body_temperature IS NOT NULL ORDER BY recorded_at DESC LIMIT 1) as temperature_recorded_at
+            FROM patients p 
+            ORDER BY p.created_at DESC`
+        );
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -296,7 +314,14 @@ app.get('/api/patients', async (req, res) => {
 // Get patient by ID
 app.get('/api/patients/:id', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
+        const result = await pool.query(
+            `SELECT p.*, 
+                (SELECT body_temperature FROM patient_vitals WHERE patient_id = p.id AND body_temperature IS NOT NULL ORDER BY recorded_at DESC LIMIT 1) as latest_temperature,
+                (SELECT recorded_at FROM patient_vitals WHERE patient_id = p.id AND body_temperature IS NOT NULL ORDER BY recorded_at DESC LIMIT 1) as temperature_recorded_at
+            FROM patients p 
+            WHERE p.id = $1`,
+            [req.params.id]
+        );
         if (result.rows.length > 0) {
             res.json(result.rows[0]);
         } else {
@@ -315,10 +340,38 @@ app.post('/api/patients', async (req, res) => {
             'INSERT INTO patients (name, status, body_temperature, last_visit, email) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [name, status, body_temperature, last_visit, email]
         );
-        logAudit('patients', 'Create', result.rows[0].id, null, result.rows[0]);
-        res.status(201).json(result.rows[0]);
+        
+        const patient = result.rows[0];
+        
+        // If temperature is provided, also record it in patient_vitals
+        if (body_temperature) {
+            await pool.query(
+                `INSERT INTO patient_vitals (patient_id, body_temperature, notes, recorded_by) 
+                VALUES ($1, $2, $3, 'Mobile Registration') RETURNING id`,
+                [patient.id, body_temperature, `Initial temperature recorded during registration`]
+            );
+        }
+        
+        logAudit('patients', 'Create', patient.id, null, patient);
+        
+        // Return patient data with success flag for mobile app
+        res.status(201).json({
+            success: true,
+            message: 'Patient registered successfully',
+            patient: {
+                id: patient.id,
+                patient_id: patient.patient_id,
+                name: patient.name,
+                email: patient.email,
+                status: patient.status,
+                body_temperature: patient.body_temperature,
+                last_visit: patient.last_visit,
+                avatar_color: patient.avatar_color,
+                created_at: patient.created_at
+            }
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -328,18 +381,29 @@ app.put('/api/patients/:id', async (req, res) => {
     try {
         const beforeResult = await pool.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
+        
         const result = await pool.query(
             'UPDATE patients SET name = $1, status = $2, body_temperature = $3, last_visit = $4, email = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *',
             [name, status, body_temperature, last_visit, email, req.params.id]
         );
-        if (result.rows.length > 0) {
-            logAudit('patients', 'Update', req.params.id, beforeState, result.rows[0]);
-            res.json(result.rows[0]);
-        } else {
-            res.status(404).json({ error: 'Patient not found' });
+        
+        // If temperature was updated, also record it in patient_vitals
+        if (body_temperature !== null && body_temperature !== undefined && body_temperature !== beforeState.body_temperature) {
+            await pool.query(
+                `INSERT INTO patient_vitals (patient_id, body_temperature, recorded_by, notes) 
+                VALUES ($1, $2, 'System', 'Temperature update via patient profile')`,
+                [req.params.id, body_temperature]
+            );
         }
+        
+        logAudit('patients', 'Update', req.params.id, beforeState, result.rows[0]);
+        res.status(200).json({
+            success: true,
+            message: 'Patient updated successfully',
+            patient: result.rows[0]
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -1261,27 +1325,41 @@ app.post('/api/patients/:id/temperature', async (req, res) => {
     const patientId = req.params.id;
     const { body_temperature, device_id, notes, recorded_by } = req.body;
     
-    if (!body_temperature) {
-        return res.status(400).json({ error: 'body_temperature is required' });
+    if (body_temperature === null || body_temperature === undefined || body_temperature === '') {
+        return res.status(400).json({ success: false, error: 'body_temperature is required and must be a valid number' });
+    }
+    
+    // Validate temperature is a number
+    const tempValue = parseFloat(body_temperature);
+    if (isNaN(tempValue)) {
+        return res.status(400).json({ success: false, error: 'body_temperature must be a valid number' });
     }
     
     try {
         // Get patient name for alert messages
         const patientResult = await pool.query('SELECT name FROM patients WHERE id = $1', [patientId]);
         if (patientResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Patient not found' });
+            return res.status(404).json({ success: false, error: 'Patient not found' });
         }
         const patientName = patientResult.rows[0].name;
         
-        // Insert temperature record
-        const result = await pool.query(
+        // Insert temperature record into vitals
+        const vitalResult = await pool.query(
             `INSERT INTO patient_vitals (patient_id, device_id, body_temperature, notes, recorded_by) 
             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [patientId, device_id, body_temperature, notes, recorded_by || 'System']
+            [patientId, device_id || null, tempValue, notes || null, recorded_by || 'System']
+        );
+        
+        const vitalRecord = vitalResult.rows[0];
+        
+        // Update patient's body_temperature field to keep it in sync
+        await pool.query(
+            'UPDATE patients SET body_temperature = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [tempValue, patientId]
         );
         
         // Check for abnormal temperature and create alert
-        const alertData = checkTemperatureAndAlert(body_temperature, patientId, patientName);
+        const alertData = checkTemperatureAndAlert(tempValue, patientId, patientName);
         let alertCreated = null;
         
         if (alertData) {
@@ -1289,19 +1367,28 @@ app.post('/api/patients/:id/temperature', async (req, res) => {
             alertCreated = alertData.title;
         }
         
-        // Update patient's body temperature
-        await pool.query('UPDATE patients SET body_temperature = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [body_temperature, patientId]);
-        
+        // Return comprehensive response for mobile app
         res.status(201).json({
-            temperature: result.rows[0].body_temperature,
-            patient_id: patientId,
-            patient_name: patientName,
-            recorded_at: result.rows[0].recorded_at,
-            alert_generated: alertCreated ? true : false,
-            alert_message: alertCreated
+            success: true,
+            message: 'Temperature recorded successfully',
+            data: {
+                vital_id: vitalRecord.id,
+                patient_id: patientId,
+                patient_name: patientName,
+                temperature: vitalRecord.body_temperature,
+                recorded_at: vitalRecord.recorded_at,
+                device_id: vitalRecord.device_id,
+                notes: vitalRecord.notes,
+                recorded_by: vitalRecord.recorded_by
+            },
+            alert: {
+                generated: alertCreated ? true : false,
+                message: alertCreated || null,
+                severity: alertData ? alertData.severity : null
+            }
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -1319,6 +1406,278 @@ app.get('/api/temperature/latest', async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Get latest temperature for a specific patient (MOBILE APP ENDPOINT)
+app.get('/api/patients/:id/temperature/latest', async (req, res) => {
+    const patientId = req.params.id;
+    try {
+        // First, get the latest from patient_vitals
+        const vitalResult = await pool.query(
+            `SELECT id, patient_id, body_temperature, recorded_by, recorded_at, device_id, notes
+            FROM patient_vitals 
+            WHERE patient_id = $1 AND body_temperature IS NOT NULL 
+            ORDER BY recorded_at DESC LIMIT 1`,
+            [patientId]
+        );
+        
+        // Also get the main patient table temperature
+        const patientResult = await pool.query(
+            'SELECT body_temperature, updated_at FROM patients WHERE id = $1',
+            [patientId]
+        );
+        
+        if (patientResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Patient not found' });
+        }
+        
+        const latestVital = vitalResult.rows[0];
+        const patient = patientResult.rows[0];
+        
+        // Return the most recent temperature from either source
+        res.json({
+            patient_id: patientId,
+            body_temperature: latestVital ? latestVital.body_temperature : patient.body_temperature,
+            recorded_at: latestVital ? latestVital.recorded_at : patient.updated_at,
+            source: latestVital ? 'vitals' : 'patient_table',
+            vital_id: latestVital ? latestVital.id : null,
+            device_id: latestVital ? latestVital.device_id : null,
+            notes: latestVital ? latestVital.notes : null
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===== PATIENT REPORTS API (MOBILE & ADMIN SYNC) =====
+// Get all reports for a specific patient (MOBILE APP)
+app.get('/api/patients/:patientId/reports', async (req, res) => {
+    const patientId = req.params.patientId;
+    const { page = 1, limit = 10, status, severity } = req.query;
+    const offset = (page - 1) * limit;
+
+    try {
+        let query = 'SELECT * FROM employee_reports WHERE patient_id = $1';
+        const params = [patientId];
+        let countQuery = 'SELECT COUNT(*) as count FROM employee_reports WHERE patient_id = $1';
+
+        // Apply filters
+        if (status) {
+            query += ` AND status = $${params.length + 1}`;
+            countQuery += ` AND status = $${params.length + 1}`;
+            params.push(status);
+        }
+
+        if (severity) {
+            query += ` AND severity = $${params.length + 1}`;
+            countQuery += ` AND severity = $${params.length + 1}`;
+            params.push(severity);
+        }
+
+        // Get total count
+        const countResult = await pool.query(countQuery, params);
+        const total = parseInt(countResult.rows[0].count) || 0;
+
+        // Get paginated reports
+        query += ` ORDER BY report_date DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        const queryParams = [...params, parseInt(limit), parseInt(offset)];
+
+        const result = await pool.query(query, queryParams);
+
+        res.json({
+            success: true,
+            patient_id: patientId,
+            data: result.rows,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Get single patient report (MOBILE & ADMIN)
+app.get('/api/patients/:patientId/reports/:reportId', async (req, res) => {
+    const { patientId, reportId } = req.params;
+
+    try {
+        const result = await pool.query(
+            'SELECT * FROM employee_reports WHERE report_id = $1 AND patient_id = $2',
+            [reportId, patientId]
+        );
+
+        if (result.rows.length > 0) {
+            res.json({ success: true, data: result.rows[0] });
+        } else {
+            res.status(404).json({ success: false, error: 'Report not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Create new report for patient (MOBILE & ADMIN SYNC)
+app.post('/api/patients/:patientId/reports', async (req, res) => {
+    const patientId = req.params.patientId;
+    const {
+        employee_id,
+        employee_name,
+        department_id,
+        department_name,
+        report_type,
+        title,
+        description,
+        severity = 'Normal',
+        status = 'Open',
+        report_date = new Date(),
+        notes
+    } = req.body;
+
+    try {
+        // Verify patient exists
+        const patientCheck = await pool.query('SELECT id FROM patients WHERE id = $1', [patientId]);
+        if (patientCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Patient not found' });
+        }
+
+        // Insert report
+        const result = await pool.query(
+            `INSERT INTO employee_reports 
+            (patient_id, employee_id, employee_name, department_id, department_name, report_type, title, description, severity, status, report_date, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            RETURNING *`,
+            [patientId, employee_id, employee_name, department_id, department_name, report_type, title, description, severity, status, report_date, notes]
+        );
+
+        logAudit('employee_reports', 'Create', result.rows[0].report_id, null, result.rows[0]);
+
+        res.status(201).json({
+            success: true,
+            message: 'Report created successfully',
+            data: result.rows[0]
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Update patient report (MOBILE & ADMIN SYNC)
+app.put('/api/patients/:patientId/reports/:reportId', async (req, res) => {
+    const { patientId, reportId } = req.params;
+    const { title, description, severity, status, notes } = req.body;
+
+    try {
+        // Get current report
+        const beforeResult = await pool.query(
+            'SELECT * FROM employee_reports WHERE report_id = $1 AND patient_id = $2',
+            [reportId, patientId]
+        );
+
+        if (beforeResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Report not found' });
+        }
+
+        const beforeState = beforeResult.rows[0];
+
+        // Update report
+        const result = await pool.query(
+            `UPDATE employee_reports 
+            SET title = COALESCE($1, title), 
+                description = COALESCE($2, description), 
+                severity = COALESCE($3, severity), 
+                status = COALESCE($4, status), 
+                notes = COALESCE($5, notes),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE report_id = $6 AND patient_id = $7
+            RETURNING *`,
+            [title, description, severity, status, notes, reportId, patientId]
+        );
+
+        logAudit('employee_reports', 'Update', reportId, beforeState, result.rows[0]);
+
+        res.json({
+            success: true,
+            message: 'Report updated successfully',
+            data: result.rows[0]
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Get patient reports summary (MOBILE & ADMIN)
+app.get('/api/patients/:patientId/reports-summary', async (req, res) => {
+    const patientId = req.params.patientId;
+
+    try {
+        // Verify patient exists
+        const patientCheck = await pool.query('SELECT name FROM patients WHERE id = $1', [patientId]);
+        if (patientCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Patient not found' });
+        }
+
+        const patientName = patientCheck.rows[0].name;
+
+        // Get summary stats
+        const summaryResult = await pool.query(
+            `SELECT 
+                COALESCE(COUNT(*), 0) as total_reports,
+                COALESCE(SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END), 0) as open_reports,
+                COALESCE(SUM(CASE WHEN severity = 'Critical' THEN 1 ELSE 0 END), 0) as critical_reports,
+                COALESCE(SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END), 0) as resolved_reports
+            FROM employee_reports
+            WHERE patient_id = $1`,
+            [patientId]
+        );
+
+        const byTypeResult = await pool.query(
+            `SELECT report_type, COUNT(*) as count
+            FROM employee_reports
+            WHERE patient_id = $1
+            GROUP BY report_type`,
+            [patientId]
+        );
+
+        const bySeverityResult = await pool.query(
+            `SELECT severity, COUNT(*) as count
+            FROM employee_reports
+            WHERE patient_id = $1
+            GROUP BY severity`,
+            [patientId]
+        );
+
+        const recentReports = await pool.query(
+            `SELECT report_id, title, severity, status, report_date
+            FROM employee_reports
+            WHERE patient_id = $1
+            ORDER BY report_date DESC
+            LIMIT 5`,
+            [patientId]
+        );
+
+        res.json({
+            success: true,
+            patient_id: patientId,
+            patient_name: patientName,
+            data: {
+                summary: {
+                    total_reports: parseInt(summaryResult.rows[0].total_reports) || 0,
+                    open_reports: parseInt(summaryResult.rows[0].open_reports) || 0,
+                    critical_reports: parseInt(summaryResult.rows[0].critical_reports) || 0,
+                    resolved_reports: parseInt(summaryResult.rows[0].resolved_reports) || 0
+                },
+                by_type: byTypeResult.rows || [],
+                by_severity: bySeverityResult.rows || [],
+                recent_reports: recentReports.rows || []
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -2149,7 +2508,8 @@ app.get('/api/audit-logs/:id', async (req, res) => {
 
 // Create audit log entry (for activity tracking)
 app.post('/api/audit-logs', async (req, res) => {
-    const { admin_name, action, table_name, target_id, ip_address, before_state, after_state } = req.body;
+    const { admin_name, action, table_name, target_id, before_state, after_state } = req.body;
+    const ip_address = getClientIp(req); // Extract IP from request
     try {
         const result = await pool.query(
             'INSERT INTO audit_logs (admin_name, action, table_name, target_id, ip_address, before_state, after_state) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',

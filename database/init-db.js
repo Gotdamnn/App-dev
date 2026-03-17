@@ -335,6 +335,39 @@ async function syncAdminsToStaff() {
     }
 }
 
+// Ensure patient vitals table exists for temperature tracking
+async function ensurePatientVitalsTable() {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS patient_vitals (
+                id SERIAL PRIMARY KEY,
+                patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
+                device_id VARCHAR(100),
+                body_temperature DECIMAL(5, 2),
+                notes TEXT,
+                recorded_by VARCHAR(255) DEFAULT 'System',
+                recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            -- Create index for faster queries
+            CREATE INDEX IF NOT EXISTS idx_patient_vitals_patient_id ON patient_vitals(patient_id);
+            CREATE INDEX IF NOT EXISTS idx_patient_vitals_recorded_at ON patient_vitals(recorded_at DESC);
+        `);
+        
+        const result = await client.query('SELECT COUNT(*) as count FROM patient_vitals');
+        const count = result.rows[0].count;
+        console.log(`✅ Patient vitals table ensured with ${count} records`);
+    } catch (err) {
+        if (!err.message.includes('already exists')) {
+            console.error('⚠️  Error ensuring patient vitals table:', err.message);
+        }
+    } finally {
+        client.release();
+    }
+}
+
 // Run all migrations
 async function runMigrations() {
     console.log('\n🔧 Starting database migrations...\n');
@@ -343,6 +376,7 @@ async function runMigrations() {
         await ensureStaffTable();
         await ensurePermissionsTable();
         await ensureStaffPermissionsTable();
+        await ensurePatientVitalsTable();
         await ensureNotificationsTable();
         await syncAdminsToStaff();
         await fixCreateNotificationFunction();

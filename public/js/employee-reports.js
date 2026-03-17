@@ -27,6 +27,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('editDetailsBtn')?.addEventListener('click', editReport);
     document.getElementById('resolveBtn')?.addEventListener('click', resolveReport);
 
+    // Real-time search with debounce
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentPage = 1;
+                loadReports();
+            }, 300);
+        });
+    }
+
+    // Real-time filter change listeners
+    const filterInputs = ['statusFilter', 'severityFilter', 'reportTypeFilter'];
+    filterInputs.forEach(filterId => {
+        const element = document.getElementById(filterId);
+        if (element) {
+            element.addEventListener('change', () => {
+                currentPage = 1;
+                loadReports();
+            });
+        }
+    });
+
     // Load initial data with error handling
     setTimeout(() => {
         console.log('📊 Starting to load initial data...');
