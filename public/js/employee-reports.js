@@ -314,8 +314,18 @@ async function submitReport() {
     const form = document.getElementById('reportForm');
     const submitBtn = document.getElementById('submitReportBtn');
     
+    console.log('📋 Submitting report...');
+    
+    if (!form) {
+        console.error('Report form not found');
+        showAlert('Error: Form not found', 'danger');
+        return;
+    }
+
     if (!form.checkValidity()) {
+        console.warn('⚠️ Form validation failed');
         form.classList.add('was-validated');
+        showAlert('Please fill in all required fields marked with *', 'warning');
         return;
     }
 
@@ -325,28 +335,43 @@ async function submitReport() {
 
     try {
         const employeeSelect = document.getElementById('employeeSelect');
-        const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
         const departmentSelect = document.getElementById('departmentSelect');
+        
+        if (!employeeSelect || !employeeSelect.value) {
+            throw new Error('Please select an employee');
+        }
+        
+        if (!departmentSelect || !departmentSelect.value) {
+            throw new Error('Please select a department');
+        }
+
+        const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
         const deptOption = departmentSelect.options[departmentSelect.selectedIndex];
+        const employeeName = selectedOption?.dataset?.name || selectedOption?.textContent || '';
+        const deptName = deptOption?.dataset?.name || deptOption?.textContent || '';
 
         const reportData = {
-            employee_id: employeeSelect.value,
-            employee_name: selectedOption.dataset.name,
-            department_id: departmentSelect.value,
-            department_name: deptOption.dataset.name,
-            report_type: document.getElementById('reportTypeSelect').value,
-            category: document.getElementById('categoryInput').value,
-            title: document.getElementById('titleInput').value,
-            description: document.getElementById('descriptionInput').value,
-            reported_by: document.getElementById('reportedByInput').value,
-            severity: document.getElementById('severitySelect').value,
-            priority: document.getElementById('prioritySelect').value
+            employee_id: parseInt(employeeSelect.value),
+            employee_name: employeeName,
+            department_id: departmentSelect.value ? parseInt(departmentSelect.value) : null,
+            department_name: deptName,
+            report_type: document.getElementById('reportTypeSelect')?.value || '',
+            category: document.getElementById('categoryInput')?.value || '',
+            title: document.getElementById('titleInput')?.value || '',
+            description: document.getElementById('descriptionInput')?.value || '',
+            reported_by: document.getElementById('reportedByInput')?.value || '',
+            severity: document.getElementById('severitySelect')?.value || 'Medium',
+            priority: document.getElementById('prioritySelect')?.value || 'Normal'
         };
+
+        console.log('📤 Sending report data:', reportData);
 
         const method = currentReportId ? 'PUT' : 'POST';
         const url = currentReportId 
             ? `${API_BASE}/employee-reports/${currentReportId}`
             : `${API_BASE}/employee-reports`;
+
+        console.log(`📨 ${method} to ${url}`);
 
         const response = await fetch(url, {
             method,
@@ -355,23 +380,29 @@ async function submitReport() {
         });
 
         const data = await response.json();
+        console.log('📥 Response:', data);
 
         if (!response.ok) {
-            showAlert('Error: ' + (data.error || 'Failed to submit report'), 'danger');
+            const errorMsg = data.error || `HTTP ${response.status}`;
+            console.error('❌ Error response:', errorMsg);
+            showAlert('Error: ' + errorMsg, 'danger');
             return;
         }
 
         if (data.success) {
+            console.log('✅ Report submitted successfully');
             showAlert(currentReportId ? 'Report updated successfully' : 'Report created successfully', 'success');
             reportModal.hide();
             loadReports(1);
             loadStatistics();
         } else {
-            showAlert('Error submitting report: ' + (data.error || 'Unknown error'), 'danger');
+            const errorMsg = data.error || 'Unknown error';
+            console.error('❌ Request failed:', errorMsg);
+            showAlert('Error submitting report: ' + errorMsg, 'danger');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showAlert('Failed to submit report', 'danger');
+        console.error('❌ Exception:', error.message);
+        showAlert('Failed to submit report: ' + error.message, 'danger');
     } finally {
         // Re-enable button
         submitBtn.disabled = false;

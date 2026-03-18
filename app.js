@@ -475,12 +475,12 @@ app.get('/api/patients/:id', async (req, res) => {
 
 // Create new patient
 app.post('/api/patients', async (req, res) => {
-    const { name, status, body_temperature, last_visit, email } = req.body;
+    const { name, status, body_temperature, last_visit, email, age, gender } = req.body;
     const clientIp = getClientIp(req);
     try {
         const result = await pool.query(
-            'INSERT INTO patients (name, status, body_temperature, last_visit, email) VALUES ($1, $2, $3, COALESCE($4, CURRENT_DATE), $5) RETURNING *',
-            [name, status, body_temperature, last_visit, email]
+            'INSERT INTO patients (name, status, body_temperature, last_visit, email, age, gender) VALUES ($1, $2, $3, COALESCE($4, CURRENT_DATE), $5, $6, $7) RETURNING *',
+            [name, status, body_temperature, last_visit, email, age || null, gender || null]
         );
         
         const patient = result.rows[0];
@@ -508,6 +508,8 @@ app.post('/api/patients', async (req, res) => {
                 status: patient.status,
                 body_temperature: patient.body_temperature,
                 last_visit: patient.last_visit,
+                age: patient.age,
+                gender: patient.gender,
                 avatar_color: patient.avatar_color,
                 created_at: patient.created_at
             }
@@ -519,15 +521,15 @@ app.post('/api/patients', async (req, res) => {
 
 // Update patient
 app.put('/api/patients/:id', async (req, res) => {
-    const { name, status, body_temperature, last_visit, email } = req.body;
+    const { name, status, body_temperature, last_visit, email, age, gender } = req.body;
     const clientIp = getClientIp(req);
     try {
         const beforeResult = await pool.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
         
         const result = await pool.query(
-            'UPDATE patients SET name = $1, status = $2, body_temperature = $3, last_visit = $4, email = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *',
-            [name, status, body_temperature, last_visit, email, req.params.id]
+            'UPDATE patients SET name = $1, status = $2, body_temperature = $3, last_visit = $4, email = $5, age = $6, gender = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $8 RETURNING *',
+            [name, status, body_temperature, last_visit, email, age || null, gender || null, req.params.id]
         );
         
         // If temperature was updated, also record it in patient_vitals
@@ -3197,6 +3199,8 @@ app.post('/api/employee-reports', async (req, res) => {
             report_type, category, title, description, reported_by, reported_by_id,
             severity, priority
         } = req.body;
+        
+        const clientIp = getClientIp(req);
 
         // Validate required fields
         if (!employee_id || !report_type || !title || !severity) {
@@ -3232,7 +3236,7 @@ app.post('/api/employee-reports', async (req, res) => {
             [employee_id, empName, deptId, deptName, report_type, category, title, description, reported_by, reported_by_id, severity, priority]
         );
 
-        logAudit('employee_reports', 'Create', result.rows[0].report_id, null, result.rows[0]);
+        await logAudit('employee_reports', 'Create', result.rows[0].report_id, null, result.rows[0], reported_by || 'System', clientIp);
         res.status(201).json({ success: true, message: 'Report created successfully', data: result.rows[0] });
     } catch (err) {
         console.error('Error creating report:', err);

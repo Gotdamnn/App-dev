@@ -383,12 +383,16 @@ function openEditModal(patient) {
     const statusSelect = modal.querySelector('#patientStatus');
     const tempInput = modal.querySelector('#patientTemp');
     const visitInput = modal.querySelector('#lastVisit');
+    const ageInput = modal.querySelector('#patientAge');
+    const genderSelect = modal.querySelector('#patientGender');
 
     if (nameInput) nameInput.value = patient.name;
     if (idInput) idInput.value = patient.patient_id;
     if (emailInput) emailInput.value = patient.email || '';
     if (statusSelect) statusSelect.value = patient.status || 'active';
     if (tempInput) tempInput.value = patient.body_temperature || '';
+    if (ageInput) ageInput.value = patient.age || '';
+    if (genderSelect) genderSelect.value = patient.gender || '';
     if (visitInput) {
         if (patient.last_visit) {
             const date = new Date(patient.last_visit);
@@ -435,13 +439,17 @@ async function savePatientChanges() {
     const statusSelect = modal.querySelector('#patientStatus');
     const tempInput = modal.querySelector('#patientTemp');
     const visitInput = modal.querySelector('#lastVisit');
+    const ageInput = modal.querySelector('#patientAge');
+    const genderSelect = modal.querySelector('#patientGender');
 
     const updatedData = {
         name: nameInput.value,
         email: emailInput.value || null,
         status: statusSelect.value,
         body_temperature: tempInput.value ? parseFloat(tempInput.value) : null,
-        last_visit: visitInput.value || null
+        last_visit: visitInput.value || null,
+        age: ageInput.value ? parseInt(ageInput.value) : null,
+        gender: genderSelect.value || null
     };
 
     try {
@@ -488,13 +496,17 @@ async function addNewPatient() {
     const statusSelect = form.querySelector('#addPatientStatus');
     const tempInput = form.querySelector('#addPatientTemp');
     const visitInput = form.querySelector('#addLastVisit');
+    const ageInput = form.querySelector('#addPatientAge');
+    const genderSelect = form.querySelector('#addPatientGender');
 
     const newPatientData = {
         name: nameInput.value,
         email: emailInput.value,
         status: statusSelect.value,
         body_temperature: parseFloat(tempInput.value),
-        last_visit: visitInput.value
+        last_visit: visitInput.value,
+        age: ageInput.value ? parseInt(ageInput.value) : null,
+        gender: genderSelect.value || null
     };
 
     try {
