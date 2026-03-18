@@ -282,12 +282,30 @@ app.post('/api/login', async (req, res) => {
             const admin = result.rows[0];
             const validPassword = await bcrypt.compare(password, admin.password);
             if (validPassword) {
-                await logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp, admin.id);
+                // Log successful login
+                await logAudit('users', 'Login', admin.id, null, { 
+                    email: admin.email, 
+                    username: admin.username,
+                    loginTime: new Date().toISOString(),
+                    action: 'User successfully logged in'
+                }, admin.email, clientIp, admin.id);
                 res.json({ success: true, user: admin });
             } else {
+                // Log failed login attempt
+                await logAudit('users', 'LoginFailed', null, null, { 
+                    email: email,
+                    reason: 'Invalid password',
+                    action: 'Failed login attempt'
+                }, email, clientIp, null);
                 res.status(401).json({ success: false, message: 'Invalid credentials' });
             }
         } else {
+            // Log failed login attempt - user not found
+            await logAudit('users', 'LoginFailed', null, null, { 
+                email: email,
+                reason: 'User not found',
+                action: 'Failed login attempt'
+            }, email, clientIp, null);
             res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
     } catch (err) {
@@ -305,12 +323,30 @@ app.post('/api/auth/login', async (req, res) => {
             const admin = result.rows[0];
             const validPassword = await bcrypt.compare(password, admin.password);
             if (validPassword) {
-                await logAudit('users', 'Login', admin.id, null, { email: admin.email, username: admin.username }, admin.email, clientIp, admin.id);
+                // Log successful login
+                await logAudit('users', 'Login', admin.id, null, { 
+                    email: admin.email, 
+                    username: admin.username,
+                    loginTime: new Date().toISOString(),
+                    action: 'User successfully logged in'
+                }, admin.email, clientIp, admin.id);
                 res.json({ success: true, user: admin });
             } else {
+                // Log failed login attempt
+                await logAudit('users', 'LoginFailed', null, null, { 
+                    email: email,
+                    reason: 'Invalid password',
+                    action: 'Failed login attempt'
+                }, email, clientIp, null);
                 res.status(401).json({ success: false, message: 'Invalid credentials' });
             }
         } else {
+            // Log failed login attempt - user not found
+            await logAudit('users', 'LoginFailed', null, null, { 
+                email: email,
+                reason: 'User not found',
+                action: 'Failed login attempt'
+            }, email, clientIp, null);
             res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
     } catch (err) {
@@ -323,7 +359,8 @@ app.post('/api/logout', async (req, res) => {
     const { username, email, id } = req.body;
     const clientIp = getClientIp(req);
     try {
-        await logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp, id);
+        // Log using the provided user id (which is admin_id)
+        await logAudit('users', 'Logout', id || null, null, { email: email, username: username, action: 'User logged out' }, email || username || 'Unknown', clientIp, id);
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -335,7 +372,8 @@ app.post('/api/auth/logout', async (req, res) => {
     const { username, email, id } = req.body;
     const clientIp = getClientIp(req);
     try {
-        await logAudit('users', 'Logout', null, null, { email: email, username: username }, email, clientIp, id);
+        // Log using the provided user id (which is admin_id)
+        await logAudit('users', 'Logout', id || null, null, { email: email, username: username, action: 'User logged out' }, email || username || 'Unknown', clientIp, id);
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
