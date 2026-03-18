@@ -15,13 +15,25 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
         detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        console.log('✅ Modals initialized');
     } catch (e) {
-        console.error('Modal initialization error:', e);
+        console.error('❌ Modal initialization error:', e);
     }
 
     // Event Listeners
+    const submitBtn = document.getElementById('submitReportBtn');
+    if (submitBtn) {
+        console.log('✅ Submit button found');
+        submitBtn.addEventListener('click', (e) => {
+            console.log('🔘 Submit button clicked');
+            e.preventDefault();
+            submitReport();
+        });
+    } else {
+        console.error('❌ Submit button NOT found');
+    }
+
     document.getElementById('newReportBtn')?.addEventListener('click', openNewReportModal);
-    document.getElementById('submitReportBtn')?.addEventListener('click', submitReport);
     document.getElementById('filterBtn')?.addEventListener('click', applyFilters);
     document.getElementById('resetBtn')?.addEventListener('click', resetFilters);
     document.getElementById('editDetailsBtn')?.addEventListener('click', editReport);
@@ -311,17 +323,25 @@ function openNewReportModal() {
 
 // Submit report
 async function submitReport() {
-    const form = document.getElementById('reportForm');
+    console.log('📋 Submit Report button clicked');
+    
     const submitBtn = document.getElementById('submitReportBtn');
-    
-    console.log('📋 Submitting report...');
-    
+    if (!submitBtn) {
+        console.error('Submit button element not found');
+        showAlert('Error: Submit button not found', 'danger');
+        return;
+    }
+
+    const form = document.getElementById('reportForm');
     if (!form) {
         console.error('Report form not found');
         showAlert('Error: Form not found', 'danger');
         return;
     }
 
+    console.log('✅ Form found, validating...');
+
+    // Check form validity
     if (!form.checkValidity()) {
         console.warn('⚠️ Form validation failed');
         form.classList.add('was-validated');
@@ -331,47 +351,78 @@ async function submitReport() {
 
     // Disable button to prevent double submission
     submitBtn.disabled = true;
+    const originalHTML = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
 
     try {
+        // Get form elements
         const employeeSelect = document.getElementById('employeeSelect');
         const departmentSelect = document.getElementById('departmentSelect');
-        
-        if (!employeeSelect || !employeeSelect.value) {
+        const reportTypeSelect = document.getElementById('reportTypeSelect');
+        const categoryInput = document.getElementById('categoryInput');
+        const titleInput = document.getElementById('titleInput');
+        const descriptionInput = document.getElementById('descriptionInput');
+        const reportedByInput = document.getElementById('reportedByInput');
+        const severitySelect = document.getElementById('severitySelect');
+        const prioritySelect = document.getElementById('prioritySelect');
+
+        // Validate required selects
+        if (!employeeSelect?.value) {
             throw new Error('Please select an employee');
         }
-        
-        if (!departmentSelect || !departmentSelect.value) {
-            throw new Error('Please select a department');
+        if (!reportTypeSelect?.value) {
+            throw new Error('Please select a report type');
+        }
+        if (!titleInput?.value?.trim()) {
+            throw new Error('Please enter a report title');
+        }
+        if (!descriptionInput?.value?.trim()) {
+            throw new Error('Please enter a report description');
+        }
+        if (!severitySelect?.value) {
+            throw new Error('Please select severity');
         }
 
-        const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
-        const deptOption = departmentSelect.options[departmentSelect.selectedIndex];
-        const employeeName = selectedOption?.dataset?.name || selectedOption?.textContent || '';
-        const deptName = deptOption?.dataset?.name || deptOption?.textContent || '';
+        // Get employee name safely
+        let employeeName = '';
+        if (employeeSelect.selectedIndex >= 0 && employeeSelect.selectedIndex < employeeSelect.options.length) {
+            const selectedOpt = employeeSelect.options[employeeSelect.selectedIndex];
+            employeeName = selectedOpt?.dataset?.name || selectedOpt?.textContent || '';
+        }
+        
+        if (!employeeName) {
+            throw new Error('Employee name not found. Please re-select the employee.');
+        }
+
+        // Get department name safely
+        let deptName = '';
+        if (departmentSelect?.selectedIndex >= 0 && departmentSelect.selectedIndex < departmentSelect.options.length) {
+            const selectedDeptOpt = departmentSelect.options[departmentSelect.selectedIndex];
+            deptName = selectedDeptOpt?.dataset?.name || selectedDeptOpt?.textContent || '';
+        }
 
         const reportData = {
             employee_id: parseInt(employeeSelect.value),
             employee_name: employeeName,
-            department_id: departmentSelect.value ? parseInt(departmentSelect.value) : null,
+            department_id: departmentSelect?.value ? parseInt(departmentSelect.value) : null,
             department_name: deptName,
-            report_type: document.getElementById('reportTypeSelect')?.value || '',
-            category: document.getElementById('categoryInput')?.value || '',
-            title: document.getElementById('titleInput')?.value || '',
-            description: document.getElementById('descriptionInput')?.value || '',
-            reported_by: document.getElementById('reportedByInput')?.value || '',
-            severity: document.getElementById('severitySelect')?.value || 'Medium',
-            priority: document.getElementById('prioritySelect')?.value || 'Normal'
+            report_type: reportTypeSelect?.value || '',
+            category: categoryInput?.value?.trim() || '',
+            title: titleInput?.value?.trim() || '',
+            description: descriptionInput?.value?.trim() || '',
+            reported_by: reportedByInput?.value?.trim() || '',
+            severity: severitySelect?.value || 'Medium',
+            priority: prioritySelect?.value || 'Normal'
         };
 
-        console.log('📤 Sending report data:', reportData);
+        console.log('📤 Report data prepared:', reportData);
 
         const method = currentReportId ? 'PUT' : 'POST';
         const url = currentReportId 
             ? `${API_BASE}/employee-reports/${currentReportId}`
             : `${API_BASE}/employee-reports`;
 
-        console.log(`📨 ${method} to ${url}`);
+        console.log(`📨 Sending ${method} request to ${url}`);
 
         const response = await fetch(url, {
             method,
@@ -379,34 +430,45 @@ async function submitReport() {
             body: JSON.stringify(reportData)
         });
 
+        console.log(`📥 Response received: ${response.status} ${response.statusText}`);
+
         const data = await response.json();
-        console.log('📥 Response:', data);
+        console.log('📥 Response data:', data);
 
         if (!response.ok) {
-            const errorMsg = data.error || `HTTP ${response.status}`;
-            console.error('❌ Error response:', errorMsg);
-            showAlert('Error: ' + errorMsg, 'danger');
-            return;
+            const errorMsg = data.error || `HTTP ${response.status}: ${response.statusText}`;
+            console.error('❌ Server error:', errorMsg);
+            throw new Error(errorMsg);
         }
 
-        if (data.success) {
-            console.log('✅ Report submitted successfully');
-            showAlert(currentReportId ? 'Report updated successfully' : 'Report created successfully', 'success');
-            reportModal.hide();
-            loadReports(1);
-            loadStatistics();
-        } else {
-            const errorMsg = data.error || 'Unknown error';
+        if (!data.success) {
+            const errorMsg = data.error || data.message || 'Unknown error';
             console.error('❌ Request failed:', errorMsg);
-            showAlert('Error submitting report: ' + errorMsg, 'danger');
+            throw new Error(errorMsg);
         }
+
+        console.log('✅ Report submitted successfully');
+        showAlert(currentReportId ? '✅ Report updated successfully' : '✅ Report created successfully', 'success');
+        
+        // Reset form
+        form.classList.remove('was-validated');
+        form.reset();
+        currentReportId = null;
+        
+        // Close modal and reload
+        if (reportModal) {
+            reportModal.hide();
+        }
+        loadReports(1);
+        loadStatistics();
+
     } catch (error) {
-        console.error('❌ Exception:', error.message);
-        showAlert('Failed to submit report: ' + error.message, 'danger');
+        console.error('❌ Error:', error.message);
+        showAlert(`Failed: ${error.message}`, 'danger');
     } finally {
         // Re-enable button
         submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Submit Report';
+        submitBtn.innerHTML = originalHTML;
     }
 }
 

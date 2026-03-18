@@ -541,11 +541,21 @@ app.put('/api/patients/:id', async (req, res) => {
             );
         }
         
+        // Fetch the updated patient with latest_temperature from patient_vitals (same as GET endpoint)
+        const updatedPatient = await pool.query(
+            `SELECT p.*, 
+                (SELECT body_temperature FROM patient_vitals WHERE patient_id = p.id AND body_temperature IS NOT NULL ORDER BY recorded_at DESC LIMIT 1) as latest_temperature,
+                (SELECT recorded_at FROM patient_vitals WHERE patient_id = p.id AND body_temperature IS NOT NULL ORDER BY recorded_at DESC LIMIT 1) as temperature_recorded_at
+            FROM patients p 
+            WHERE p.id = $1`,
+            [req.params.id]
+        );
+        
         await logAudit('patients', 'Update', req.params.id, beforeState, result.rows[0], email || 'Admin', clientIp);
         res.status(200).json({
             success: true,
             message: 'Patient updated successfully',
-            data: result.rows[0]
+            data: updatedPatient.rows[0]
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

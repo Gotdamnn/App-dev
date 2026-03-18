@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS patients (
     body_temperature DECIMAL(5, 2),
     last_visit DATE,
     email VARCHAR(255),
+    age INTEGER CHECK (age >= 0 AND age <= 150),
+    gender VARCHAR(20) CHECK (gender IN ('Male', 'Female', 'Other', 'Prefer not to say')),
     avatar_color VARCHAR(7),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

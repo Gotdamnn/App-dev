@@ -434,6 +434,8 @@ async function savePatientChanges() {
     const modal = document.getElementById('editPatientModal');
     const patientId = parseInt(modal.dataset.patientId);
     
+    console.log('📝 Updating patient ID:', patientId);
+    
     const nameInput = modal.querySelector('#patientName');
     const emailInput = modal.querySelector('#patientEmail');
     const statusSelect = modal.querySelector('#patientStatus');
@@ -451,6 +453,8 @@ async function savePatientChanges() {
         age: ageInput.value ? parseInt(ageInput.value) : null,
         gender: genderSelect.value || null
     };
+    
+    console.log('📤 Sending data:', updatedData);
 
     try {
         const response = await fetch(`${API_BASE}/patients/${patientId}`, {
@@ -461,11 +465,17 @@ async function savePatientChanges() {
             body: JSON.stringify(updatedData)
         });
 
+        console.log('📥 Response status:', response.status);
+        
         if (response.ok) {
             const responseData = await response.json();
+            console.log('📥 Response data:', responseData);
             const index = allPatients.findIndex(p => p.id === patientId);
+            console.log('🔍 Found patient at index:', index);
             if (index !== -1) {
+                console.log('✏️ Updating patient in array from:', allPatients[index]);
                 allPatients[index] = responseData.data;
+                console.log('✏️ Patient updated to:', allPatients[index]);
             }
             filterPatients();
             closeModal('editPatientModal');
@@ -478,10 +488,11 @@ async function savePatientChanges() {
             } catch {
                 errorData = { error: errorText };
             }
+            console.error('❌ Error response:', errorData);
             showStatusModal('Error', 'Error updating patient: ' + (errorData.error || 'Unknown error'), false);
         }
     } catch (error) {
-        console.error('Error updating patient:', error);
+        console.error('❌ Exception:', error);
         showStatusModal('Error', 'Error updating patient: ' + error.message, false);
     }
 }

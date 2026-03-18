@@ -373,6 +373,7 @@ async function runMigrations() {
     console.log('\n🔧 Starting database migrations...\n');
     
     try {
+        await ensurePatientColumnsExist();
         await ensureStaffTable();
         await ensurePermissionsTable();
         await ensureStaffPermissionsTable();
@@ -388,6 +389,54 @@ async function runMigrations() {
     } catch (err) {
         console.error('\n❌ Database migrations failed:', err.message, '\n');
         return false;
+    }
+}
+
+// Ensure age and gender columns exist in patients table
+async function ensurePatientColumnsExist() {
+    const client = await pool.connect();
+    try {
+        // Check if age column exists
+        const ageCheck = await client.query(`
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'patients' AND column_name = 'age'
+            ) as exists
+        `);
+        
+        if (!ageCheck.rows[0].exists) {
+            console.log('📝 Adding age column to patients table...');
+            await client.query(`
+                ALTER TABLE patients 
+                ADD COLUMN age INTEGER CHECK (age >= 0 AND age <= 150)
+            `);
+            console.log('✅ Age column added to patients table');
+        }
+        
+        // Check if gender column exists
+        const genderCheck = await client.query(`
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'patients' AND column_name = 'gender'
+            ) as exists
+        `);
+        
+        if (!genderCheck.rows[0].exists) {
+            console.log('📝 Adding gender column to patients table...');
+            await client.query(`
+                ALTER TABLE patients 
+                ADD COLUMN gender VARCHAR(20) CHECK (gender IN ('Male', 'Female', 'Other', 'Prefer not to say'))
+            `);
+            console.log('✅ Gender column added to patients table');
+        }
+        
+        console.log('✅ Patient columns verified');
+    } catch (err) {
+        if (!err.message.includes('already exists') && !err.message.includes('duplicate')) {
+            console.error('⚠️  Error ensuring patient columns:', err.message);
+        }
+    } finally {
+        client.release();
     }
 }
 
