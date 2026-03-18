@@ -500,7 +500,7 @@ app.post('/api/patients', async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'Patient registered successfully',
-            patient: {
+            data: {
                 id: patient.id,
                 patient_id: patient.patient_id,
                 name: patient.name,
@@ -543,7 +543,7 @@ app.put('/api/patients/:id', async (req, res) => {
         res.status(200).json({
             success: true,
             message: 'Patient updated successfully',
-            patient: result.rows[0]
+            data: result.rows[0]
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -603,7 +603,11 @@ app.post('/api/devices', async (req, res) => {
             [name, device_id, board_type, location, status, signal_strength]
         );
         await logAudit('devices', 'Create', result.rows[0].id, null, result.rows[0], 'Admin', clientIp);
-        res.status(201).json(result.rows[0]);
+        res.status(201).json({
+            success: true,
+            message: 'Device created successfully',
+            data: result.rows[0]
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -622,7 +626,11 @@ app.put('/api/devices/:id', async (req, res) => {
         );
         if (result.rows.length > 0) {
             await logAudit('devices', 'Update', req.params.id, beforeState, result.rows[0], 'Admin', clientIp);
-            res.json(result.rows[0]);
+            res.json({
+                success: true,
+                message: 'Device updated successfully',
+                data: result.rows[0]
+            });
         } else {
             res.status(404).json({ error: 'Device not found' });
         }
@@ -746,7 +754,11 @@ app.post('/api/departments', async (req, res) => {
              cost_center_code]
         );
         await logAudit('departments', 'Create', result.rows[0].department_id, null, result.rows[0], 'Admin', clientIp);
-        res.status(201).json(result.rows[0]);
+        res.status(201).json({
+            success: true,
+            message: 'Department created successfully',
+            data: result.rows[0]
+        });
     } catch (err) {
         if (err.code === '23505') {
             res.status(400).json({ error: 'A department with this name already exists' });
@@ -792,7 +804,11 @@ app.put('/api/departments/:id', async (req, res) => {
         );
         if (result.rows.length > 0) {
             await logAudit('departments', 'Update', req.params.id, beforeState, result.rows[0], 'Admin', clientIp);
-            res.json(result.rows[0]);
+            res.json({
+                success: true,
+                message: 'Department updated successfully',
+                data: result.rows[0]
+            });
         } else {
             res.status(404).json({ error: 'Department not found' });
         }
@@ -944,7 +960,11 @@ app.post('/api/employees', async (req, res) => {
              dept_id, job_title || null, employment_type || null, hire_date || null, employment_status || 'Active']
         );
         await logAudit('employees', 'Create', result.rows[0].employee_id, null, result.rows[0], email, clientIp);
-        res.status(201).json(result.rows[0]);
+        res.status(201).json({
+            success: true,
+            message: 'Employee created successfully',
+            data: result.rows[0]
+        });
     } catch (err) {
         console.error('Employee insert error:', err);
         res.status(500).json({ error: err.message });
@@ -981,7 +1001,11 @@ app.put('/api/employees/:id', async (req, res) => {
         );
         if (result.rows.length > 0) {
             await logAudit('employees', 'Update', req.params.id, beforeState, result.rows[0], email, clientIp);
-            res.json(result.rows[0]);
+            res.json({
+                success: true,
+                message: 'Employee updated successfully',
+                data: result.rows[0]
+            });
         } else {
             res.status(404).json({ error: 'Employee not found' });
         }
@@ -1106,7 +1130,11 @@ app.post('/api/alerts', async (req, res) => {
             [patient_id, title, description, alert_type, category || 'system', severity || 'info', values, normal_range, status || 'active', source || 'System', icon_class]
         );
         await logAudit('alerts', 'Create', result.rows[0].id, null, result.rows[0], 'Admin', clientIp);
-        res.status(201).json(result.rows[0]);
+        res.status(201).json({
+            success: true,
+            message: 'Alert created successfully',
+            data: result.rows[0]
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1125,7 +1153,11 @@ app.put('/api/alerts/:id', async (req, res) => {
         );
         if (result.rows.length > 0) {
             await logAudit('alerts', 'Update', req.params.id, beforeState, result.rows[0], 'Admin', clientIp);
-            res.json(result.rows[0]);
+            res.json({
+                success: true,
+                message: 'Alert updated successfully',
+                data: result.rows[0]
+            });
         } else {
             res.status(404).json({ error: 'Alert not found' });
         }
@@ -2384,7 +2416,7 @@ app.put('/api/staff/:id', async (req, res) => {
         res.json({
             success: true,
             message: 'Staff member updated successfully',
-            staff: updatedStaff
+            data: updatedStaff
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -2488,7 +2520,7 @@ app.post('/api/staff', async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'Staff member created successfully',
-            staff: newStaff
+            data: newStaff
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

@@ -451,10 +451,10 @@ async function savePatientChanges() {
         });
 
         if (response.ok) {
-            const updatedPatient = await response.json();
+            const responseData = await response.json();
             const index = allPatients.findIndex(p => p.id === patientId);
             if (index !== -1) {
-                allPatients[index] = updatedPatient;
+                allPatients[index] = responseData.data;
             }
             filterPatients();
             closeModal('editPatientModal');
@@ -504,11 +504,11 @@ async function addNewPatient() {
         });
 
         if (response.ok) {
-            const newPatient = await response.json();
-            allPatients.push(newPatient);
+            const response_data = await response.json();
+            allPatients.push(response_data.data);
             filterPatients();
             closeModal('addPatientModal');
-            showStatusModal('Success', 'Patient added successfully! Patient ID: ' + newPatient.patient_id, true);
+            showStatusModal('Success', 'Patient added successfully! Patient ID: ' + response_data.data.patient_id, true);
         } else {
             const errorText = await response.text();
             let errorData;
