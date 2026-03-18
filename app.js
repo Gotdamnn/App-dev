@@ -520,6 +520,7 @@ app.post('/api/patients', async (req, res) => {
 // Update patient
 app.put('/api/patients/:id', async (req, res) => {
     const { name, status, body_temperature, last_visit, email } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const beforeResult = await pool.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
@@ -538,7 +539,7 @@ app.put('/api/patients/:id', async (req, res) => {
             );
         }
         
-        await logAudit('patients', 'Update', req.params.id, beforeState, result.rows[0]);
+        await logAudit('patients', 'Update', req.params.id, beforeState, result.rows[0], email || 'Admin', clientIp);
         res.status(200).json({
             success: true,
             message: 'Patient updated successfully',
@@ -552,11 +553,12 @@ app.put('/api/patients/:id', async (req, res) => {
 // Delete patient
 app.delete('/api/patients/:id', async (req, res) => {
     try {
+        const clientIp = getClientIp(req);
         const beforeResult = await pool.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
         const result = await pool.query('DELETE FROM patients WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            await logAudit('patients', 'Delete', req.params.id, beforeState, null);
+            await logAudit('patients', 'Delete', req.params.id, beforeState, null, 'Admin', clientIp);
             res.json({ success: true, message: 'Patient deleted' });
         } else {
             res.status(404).json({ error: 'Patient not found' });
@@ -594,12 +596,13 @@ app.get('/api/devices/:id', async (req, res) => {
 // Create new device
 app.post('/api/devices', async (req, res) => {
     const { name, device_id, board_type, location, status, signal_strength } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const result = await pool.query(
             'INSERT INTO devices (name, device_id, board_type, location, status, signal_strength, last_data_time) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING *',
             [name, device_id, board_type, location, status, signal_strength]
         );
-        await logAudit('devices', 'Create', result.rows[0].id, null, result.rows[0]);
+        await logAudit('devices', 'Create', result.rows[0].id, null, result.rows[0], 'Admin', clientIp);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -609,6 +612,7 @@ app.post('/api/devices', async (req, res) => {
 // Update device
 app.put('/api/devices/:id', async (req, res) => {
     const { name, device_id, board_type, location, status, signal_strength } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const beforeResult = await pool.query('SELECT * FROM devices WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
@@ -617,7 +621,7 @@ app.put('/api/devices/:id', async (req, res) => {
             [name, device_id, board_type, location, status, signal_strength, req.params.id]
         );
         if (result.rows.length > 0) {
-            await logAudit('devices', 'Update', req.params.id, beforeState, result.rows[0]);
+            await logAudit('devices', 'Update', req.params.id, beforeState, result.rows[0], 'Admin', clientIp);
             res.json(result.rows[0]);
         } else {
             res.status(404).json({ error: 'Device not found' });
@@ -630,11 +634,12 @@ app.put('/api/devices/:id', async (req, res) => {
 // Delete device
 app.delete('/api/devices/:id', async (req, res) => {
     try {
+        const clientIp = getClientIp(req);
         const beforeResult = await pool.query('SELECT * FROM devices WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
         const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            await logAudit('devices', 'Delete', req.params.id, beforeState, null);
+            await logAudit('devices', 'Delete', req.params.id, beforeState, null, 'Admin', clientIp);
             res.json({ success: true, message: 'Device deleted' });
         } else {
             res.status(404).json({ error: 'Device not found' });
@@ -720,6 +725,7 @@ app.post('/api/departments', async (req, res) => {
         operating_hours_start, operating_hours_end, operating_days,
         cost_center_code
     } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const result = await pool.query(
             `INSERT INTO departments (
@@ -739,7 +745,7 @@ app.post('/api/departments', async (req, res) => {
              operating_hours_start || null, operating_hours_end || null, operating_days || 'Mon-Fri',
              cost_center_code]
         );
-        await logAudit('departments', 'Create', result.rows[0].department_id, null, result.rows[0]);
+        await logAudit('departments', 'Create', result.rows[0].department_id, null, result.rows[0], 'Admin', clientIp);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         if (err.code === '23505') {
@@ -761,6 +767,7 @@ app.put('/api/departments/:id', async (req, res) => {
         operating_hours_start, operating_hours_end, operating_days,
         cost_center_code
     } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const beforeResult = await pool.query('SELECT * FROM departments WHERE department_id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
@@ -784,7 +791,7 @@ app.put('/api/departments/:id', async (req, res) => {
              cost_center_code, req.params.id]
         );
         if (result.rows.length > 0) {
-            await logAudit('departments', 'Update', req.params.id, beforeState, result.rows[0]);
+            await logAudit('departments', 'Update', req.params.id, beforeState, result.rows[0], 'Admin', clientIp);
             res.json(result.rows[0]);
         } else {
             res.status(404).json({ error: 'Department not found' });
@@ -801,6 +808,7 @@ app.put('/api/departments/:id', async (req, res) => {
 // Delete department
 app.delete('/api/departments/:id', async (req, res) => {
     try {
+        const clientIp = getClientIp(req);
         // Check if department has employees
         const checkResult = await pool.query(
             'SELECT COUNT(*) as count FROM employees WHERE department_id = $1',
@@ -827,7 +835,7 @@ app.delete('/api/departments/:id', async (req, res) => {
         const beforeState = beforeResult.rows[0];
         const result = await pool.query('DELETE FROM departments WHERE department_id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            await logAudit('departments', 'Delete', req.params.id, beforeState, null);
+            await logAudit('departments', 'Delete', req.params.id, beforeState, null, 'Admin', clientIp);
             res.json({ success: true, message: 'Department deleted' });
         } else {
             res.status(404).json({ error: 'Department not found' });
@@ -1091,12 +1099,13 @@ app.get('/api/alerts/:id', async (req, res) => {
 // Create new alert
 app.post('/api/alerts', async (req, res) => {
     const { patient_id, title, description, alert_type, category, severity, values, normal_range, status, source, icon_class } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const result = await pool.query(
             'INSERT INTO alerts (patient_id, title, description, alert_type, category, severity, values, normal_range, status, source, icon_class) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
             [patient_id, title, description, alert_type, category || 'system', severity || 'info', values, normal_range, status || 'active', source || 'System', icon_class]
         );
-        logAudit('alerts', 'Create', result.rows[0].id, null, result.rows[0]);
+        await logAudit('alerts', 'Create', result.rows[0].id, null, result.rows[0], 'Admin', clientIp);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1106,6 +1115,7 @@ app.post('/api/alerts', async (req, res) => {
 // Update alert
 app.put('/api/alerts/:id', async (req, res) => {
     const { title, description, alert_type, category, severity, values, normal_range, status, source, icon_class } = req.body;
+    const clientIp = getClientIp(req);
     try {
         const beforeResult = await pool.query('SELECT * FROM alerts WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
@@ -1114,7 +1124,7 @@ app.put('/api/alerts/:id', async (req, res) => {
             [title, description, alert_type, category, severity, values, normal_range, status, source, icon_class, req.params.id]
         );
         if (result.rows.length > 0) {
-            logAudit('alerts', 'Update', req.params.id, beforeState, result.rows[0]);
+            await logAudit('alerts', 'Update', req.params.id, beforeState, result.rows[0], 'Admin', clientIp);
             res.json(result.rows[0]);
         } else {
             res.status(404).json({ error: 'Alert not found' });
@@ -1127,11 +1137,12 @@ app.put('/api/alerts/:id', async (req, res) => {
 // Delete alert
 app.delete('/api/alerts/:id', async (req, res) => {
     try {
+        const clientIp = getClientIp(req);
         const beforeResult = await pool.query('SELECT * FROM alerts WHERE id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
         const result = await pool.query('DELETE FROM alerts WHERE id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            logAudit('alerts', 'Delete', req.params.id, beforeState, null);
+            await logAudit('alerts', 'Delete', req.params.id, beforeState, null, 'Admin', clientIp);
             res.json({ success: true, message: 'Alert deleted' });
         } else {
             res.status(404).json({ error: 'Alert not found' });
@@ -1675,6 +1686,7 @@ app.get('/api/patients/:patientId/reports/:reportId', async (req, res) => {
 // Create new report for patient (MOBILE & ADMIN SYNC)
 app.post('/api/patients/:patientId/reports', async (req, res) => {
     const patientId = req.params.patientId;
+    const clientIp = getClientIp(req);
     const {
         employee_id,
         employee_name,
@@ -1705,7 +1717,7 @@ app.post('/api/patients/:patientId/reports', async (req, res) => {
             [patientId, employee_id, employee_name, department_id, department_name, report_type, title, description, severity, status, report_date, notes]
         );
 
-        logAudit('employee_reports', 'Create', result.rows[0].report_id, null, result.rows[0]);
+        await logAudit('employee_reports', 'Create', result.rows[0].report_id, null, result.rows[0], employee_name || 'System', clientIp);
 
         res.status(201).json({
             success: true,
@@ -2510,12 +2522,13 @@ app.delete('/api/staff/email/:email', async (req, res) => {
         await pool.query('DELETE FROM staff_permissions WHERE staff_id = $1', [staffMember.id]);
         
         // Log the action
-        logAudit('staff', 'Remove Staff Assignment', staffMember.id, {
+        const clientIp = getClientIp(req);
+        await logAudit('staff', 'Remove Staff Assignment', staffMember.id, {
             staff_name: staffMember.name,
             email: staffMember.email,
             role: staffMember.role,
             department: staffMember.department
-        }, null, removedBy);
+        }, null, removedBy, clientIp);
         
         res.json({ 
             success: true, 
@@ -2588,12 +2601,13 @@ app.delete('/api/staff/:id', async (req, res) => {
         
         if (deleteResult.rows.length > 0) {
             // Log the action
-            logAudit(isAdminRecord ? 'admin' : 'staff', 'Delete Staff Member', memberInfo.id, {
+            const clientIp = getClientIp(req);
+            await logAudit(isAdminRecord ? 'admin' : 'staff', 'Delete Staff Member', memberInfo.id, {
                 staff_name: memberInfo.name,
                 email: memberInfo.email,
                 role: memberInfo.role || 'N/A',
                 department: memberInfo.department || 'N/A'
-            }, null, createdBy);
+            }, null, createdBy, clientIp);
             
             res.json({ 
                 success: true, 
@@ -2767,11 +2781,16 @@ app.put('/api/notifications/read-all', async (req, res) => {
 // Delete notification
 app.delete('/api/notifications/:id', async (req, res) => {
     try {
+        const clientIp = getClientIp(req);
+        const beforeResult = await pool.query('SELECT * FROM notifications WHERE id = $1', [req.params.id]);
+        const beforeState = beforeResult.rows[0];
+        
         const result = await pool.query(
             'DELETE FROM notifications WHERE id = $1 RETURNING *',
             [req.params.id]
         );
         if (result.rows.length > 0) {
+            await logAudit('notifications', 'Delete', req.params.id, beforeState, null, 'Admin', clientIp);
             res.json({ success: true, message: 'Notification deleted' });
         } else {
             res.status(404).json({ error: 'Notification not found' });
@@ -2784,7 +2803,9 @@ app.delete('/api/notifications/:id', async (req, res) => {
 // Clear all notifications
 app.delete('/api/notifications', async (req, res) => {
     try {
+        const clientIp = getClientIp(req);
         const result = await pool.query('DELETE FROM notifications RETURNING *');
+        await logAudit('notifications', 'Clear All', null, { count: result.rows.length }, null, 'Admin', clientIp);
         res.json({ success: true, message: 'All notifications cleared', count: result.rows.length });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2994,6 +3015,8 @@ app.post('/api/rbac/admin/:adminId/role/:roleId', async (req, res) => {
 app.delete('/api/rbac/admin/:adminId/role/:roleId', async (req, res) => {
     try {
         const { adminId, roleId } = req.params;
+        const clientIp = getClientIp(req);
+        const removedBy = req.headers['x-user-name'] || 'Admin';
 
         // Check if Super Admin role (cannot be unassigned)
         const roleCheck = await pool.query(
@@ -3012,6 +3035,8 @@ app.delete('/api/rbac/admin/:adminId/role/:roleId', async (req, res) => {
             'DELETE FROM admin_roles WHERE admin_id = $1 AND role_id = $2',
             [adminId, roleId]
         );
+
+        await logAudit('admin_roles', 'Remove Role', adminId, { role_id: roleId }, null, removedBy, clientIp);
 
         res.json({
             success: true,
@@ -3246,12 +3271,13 @@ app.put('/api/employee-reports/:id/resolve', async (req, res) => {
 // Delete employee report
 app.delete('/api/employee-reports/:id', async (req, res) => {
     try {
+        const clientIp = getClientIp(req);
         const beforeResult = await pool.query('SELECT * FROM employee_reports WHERE report_id = $1', [req.params.id]);
         const beforeState = beforeResult.rows[0];
 
         const result = await pool.query('DELETE FROM employee_reports WHERE report_id = $1 RETURNING *', [req.params.id]);
         if (result.rows.length > 0) {
-            logAudit('employee_reports', 'Delete', req.params.id, beforeState, null);
+            await logAudit('employee_reports', 'Delete', req.params.id, beforeState, null, 'Admin', clientIp);
             res.json({ success: true, message: 'Report deleted' });
         } else {
             res.status(404).json({ success: false, error: 'Report not found' });
