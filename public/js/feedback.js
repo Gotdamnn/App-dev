@@ -76,6 +76,12 @@ async function loadFeedback() {
         if (data.feedback && data.feedback.length > 0) {
             console.log('🔍 First feedback item keys:', Object.keys(data.feedback[0]));
             console.log('🔍 First feedback item:', data.feedback[0]);
+            console.log('🔍 feedback_id value:', data.feedback[0].feedback_id);
+            console.log('🔍 app_rating value:', data.feedback[0].app_rating);
+            console.log('🔍 All fields:');
+            Object.entries(data.feedback[0]).forEach(([key, value]) => {
+                console.log(`   ${key}: ${value} (type: ${typeof value})`);
+            });
         }
 
         const tableBody = document.getElementById('feedbackTableBody');
@@ -91,36 +97,47 @@ async function loadFeedback() {
             return;
         }
 
-        tableBody.innerHTML = data.feedback.map(item => `
-            <tr onclick="openFeedbackDetails(${item.feedback_id})">
-                <td>#${item.feedback_id}</td>
+        tableBody.innerHTML = data.feedback.map(item => {
+            // Defensive: Ensure we have an ID - try different possible field names
+            const feedbackId = item.feedback_id || item.id || item.feedbackId || 'UNKNOWN';
+            const rating = item.app_rating || item.rating || item.appRating;
+            const feedbackType = item.feedback_type || item.type || 'Unknown';
+            const subject = item.subject || 'No Subject';
+            const email = item.user_email || item.email || 'No Email';
+            const createdAt = item.created_at || item.createdAt || new Date().toLocaleDateString();
+            
+            return `
+            <tr onclick="openFeedbackDetails(${feedbackId})">
+                <td>#${escapeHtml(String(feedbackId))}</td>
                 <td>
-                    <span class="badge" style="${getTypeColor(item.feedback_type)}">
-                        ${item.feedback_type}
+                    <span class="badge" style="${getTypeColor(feedbackType)}">
+                        ${escapeHtml(feedbackType)}
                     </span>
                 </td>
-                <td>${escapeHtml(item.subject)}</td>
-                <td>${item.user_email}</td>
+                <td>${escapeHtml(subject)}</td>
+                <td>${escapeHtml(email)}</td>
                 <td>
-                    ${item.app_rating ? `
+                    ${rating ? `
                         <span class="stars" style="color: #ffc107; font-size: 14px;">
-                            ${Array(item.app_rating).fill('<i class="fas fa-star"></i>').join('')}${Array(5 - item.app_rating).fill('<i class="far fa-star"></i>').join('')}
+                            ${Array(rating).fill('<i class="fas fa-star"></i>').join('')}${Array(5 - rating).fill('<i class="far fa-star"></i>').join('')}
                         </span>
                     ` : '<span class="text-muted">-</span>'}
                 </td>
-                <td>${new Date(item.created_at).toLocaleDateString()}</td>
+                <td>${escapeHtml(new Date(createdAt).toLocaleDateString())}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openFeedbackDetails(${item.feedback_id})">
+                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openFeedbackDetails(${feedbackId})">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteFeedbackPrompt(${item.feedback_id})">
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteFeedbackPrompt(${feedbackId})">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
+
 
     } catch (error) {
         console.error('❌ Error loading feedback:', error);
