@@ -2149,6 +2149,9 @@ app.get('/employees', (req, res) => res.render('employees', { title: 'Employees'
 // Employee Reports
 app.get('/employee-reports', (req, res) => res.render('employee-reports', { title: 'Employee Reports', activePage: 'employee-reports' }));
 
+// Feedback
+app.get('/feedback', (req, res) => res.render('feedback', { title: 'User Feedback', activePage: 'feedback' }));
+
 // Departments
 app.get('/departments', (req, res) => res.render('departments', { title: 'Departments' }));
 
@@ -3534,6 +3537,189 @@ app.get('/api/employee-reports-by-department/:departmentId', async (req, res) =>
         );
         res.json({ success: true, data: result.rows });
     } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ===== FEEDBACK API =====
+// Get all feedback with filtering
+app.get('/api/feedback', async (req, res) => {
+    try {
+        const { search, status, type, rating } = req.query;
+
+        console.log('📥 Fetching feedback with filters:', { search, status, type, rating });
+
+        let query = 'SELECT * FROM feedback WHERE 1=1';
+        const params = [];
+
+        // Apply filters
+        if (search) {
+            query += ` AND (subject ILIKE $${params.length + 1} OR message ILIKE $${params.length + 1} OR user_email ILIKE $${params.length + 1})`;
+            params.push(`%${search}%`);
+        }
+
+        if (status) {
+            query += ` AND status = $${params.length + 1}`;
+            params.push(status);
+        }
+
+        if (type) {
+            query += ` AND feedback_type = $${params.length + 1}`;
+            params.push(type);
+        }
+
+        if (rating) {
+            query += ` AND app_rating = $${params.length + 1}`;
+            params.push(parseInt(rating));
+        }
+
+        // Get data ordered by newest first
+        query += ` ORDER BY created_at DESC`;
+        const result = await pool.query(query, params);
+
+        console.log(`📊 Feedback found: ${result.rows.length}`);
+
+        res.json({ success: true, feedback: result.rows });
+    } catch (err) {
+        console.error('❌ Error fetching feedback:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Get single feedback by ID
+app.get('/api/feedback/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            'SELECT * FROM feedback WHERE feedback_id = $1',
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Feedback not found' });
+        }
+
+        res.json({ success: true, feedback: result.rows[0] });
+    } catch (err) {
+        console.error('❌ Error fetching feedback:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Create new feedback
+app.post('/api/feedback', async (req, res) => {
+    try {
+        const { feedback_type, subject, message, app_rating, user_email } = req.body;
+
+        // Validation
+        if (!feedback_type || !subject || !message || !user_email) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Missing required fields: feedback_type, subject, message, user_email' 
+            });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO feedback (feedback_type, subject, message, app_rating, user_email, status, priority)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING *`,
+            [feedback_type, subject, message, app_rating || null, user_email, 'Open', 'Normal']
+        );
+
+        console.log('✅ Feedback created:', result.rows[0].feedback_id);
+
+        res.status(201).json({ success: true, feedback: result.rows[0] });
+    } catch (err) {
+        console.error('❌ Error creating feedback:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Update feedback
+app.put('/api/feedback/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, priority, response_notes } = req.body;
+
+        // Check if feedback exists
+        const checkResult = await pool.query(
+            'SELECT * FROM feedback WHERE feedback_id = $1',
+            [id]
+        );
+
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Feedback not found' });
+        }
+
+        const result = await pool.query(
+            `UPDATE feedback 
+             SET status = COALESCE($1, status),
+                 priority = COALESCE($2, priority),
+                 response_notes = COALESCE($3, response_notes),
+                 response_date = CASE WHEN $3 IS NOT NULL THEN CURRENT_TIMESTAMP ELSE response_date END,
+                 responded_by = CASE WHEN $3 IS NOT NULL THEN 'Admin' ELSE responded_by END,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE feedback_id = $4
+             RETURNING *`,
+            [status || null, priority || null, response_notes || null, id]
+        );
+
+        console.log('✅ Feedback updated:', id);
+
+        res.json({ success: true, feedback: result.rows[0] });
+    } catch (err) {
+        console.error('❌ Error updating feedback:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Delete feedback
+app.delete('/api/feedback/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Check if feedback exists
+        const checkResult = await pool.query(
+            'SELECT * FROM feedback WHERE feedback_id = $1',
+            [id]
+        );
+
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Feedback not found' });
+        }
+
+        await pool.query('DELETE FROM feedback WHERE feedback_id = $1', [id]);
+
+        console.log('✅ Feedback deleted:', id);
+
+        res.json({ success: true, message: 'Feedback deleted successfully' });
+    } catch (err) {
+        console.error('❌ Error deleting feedback:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Get feedback statistics
+app.get('/api/feedback-stats', async (req, res) => {
+    try {
+        const totalResult = await pool.query('SELECT COUNT(*) as count FROM feedback');
+        const openResult = await pool.query('SELECT COUNT(*) as count FROM feedback WHERE status = $1', ['Open']);
+        const resolvedResult = await pool.query('SELECT COUNT(*) as count FROM feedback WHERE status = $1', ['Resolved']);
+        const ratingResult = await pool.query('SELECT AVG(app_rating) as avg_rating FROM feedback WHERE app_rating IS NOT NULL');
+
+        const stats = {
+            total: parseInt(totalResult.rows[0].count) || 0,
+            open: parseInt(openResult.rows[0].count) || 0,
+            resolved: parseInt(resolvedResult.rows[0].count) || 0,
+            avgRating: parseFloat(ratingResult.rows[0].avg_rating) || 0
+        };
+
+        console.log('📊 Feedback stats:', stats);
+
+        res.json({ success: true, stats });
+    } catch (err) {
+        console.error('❌ Error fetching feedback statistics:', err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });

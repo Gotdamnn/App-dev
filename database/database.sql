@@ -374,6 +374,40 @@ CREATE INDEX IF NOT EXISTS idx_employee_reports_assigned_to ON employee_reports(
 CREATE INDEX IF NOT EXISTS idx_employee_reports_report_date ON employee_reports(report_date);
 CREATE INDEX IF NOT EXISTS idx_employee_reports_report_type ON employee_reports(report_type);
 
+-- ===== FEEDBACK SYSTEM =====
+CREATE TABLE IF NOT EXISTS feedback (
+    feedback_id SERIAL PRIMARY KEY,
+    
+    -- Feedback Details
+    feedback_type VARCHAR(50) CHECK (feedback_type IN ('Bug Report', 'Feature Request', 'General Feedback', 'Complaint', 'Suggestion')) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    
+    -- Rating & Contact
+    app_rating INTEGER CHECK (app_rating >= 0 AND app_rating <= 5),
+    user_email VARCHAR(255) NOT NULL,
+    
+    -- Status & Management
+    status VARCHAR(50) CHECK (status IN ('Open', 'Under Review', 'Acknowledged', 'In Progress', 'Resolved', 'Closed')) DEFAULT 'Open',
+    priority VARCHAR(50) CHECK (priority IN ('Low', 'Normal', 'High', 'Urgent')) DEFAULT 'Normal',
+    
+    -- Response Details
+    response_notes TEXT,
+    response_date TIMESTAMP,
+    responded_by VARCHAR(255),
+    
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for feedback
+CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status);
+CREATE INDEX IF NOT EXISTS idx_feedback_type ON feedback(feedback_type);
+CREATE INDEX IF NOT EXISTS idx_feedback_rating ON feedback(app_rating);
+CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_email ON feedback(user_email);
+
 -- ===== ROLE-BASED ACCESS CONTROL (RBAC) SYSTEM =====
 
 -- Permissions table: Master list of all available permissions

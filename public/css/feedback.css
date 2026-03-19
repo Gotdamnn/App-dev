@@ -1,0 +1,482 @@
+/* User Feedback Styling */
+
+.page-header {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 0.25rem 0;
+    letter-spacing: -0.5px;
+}
+
+.page-header .text-muted {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* Statistics Cards */
+.stat-card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border-top: 4px solid #e9ecef;
+    border-radius: 8px;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+/* Stat Card Color Variants */
+.stat-card.primary {
+    border-top-color: #0d6efd;
+}
+
+.stat-card.warning {
+    border-top-color: #f9a825;
+}
+
+.stat-card.danger {
+    border-top-color: #f8534d;
+}
+
+.stat-card.success {
+    border-top-color: #28a745;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
+    margin-right: 1.25rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.stat-card h4 {
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    font-size: 1.75rem;
+}
+
+.stat-card .text-muted {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+/* Table Styling */
+.table-header-bg {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid #f1f3f5;
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 1rem;
+    font-size: 0.95rem;
+}
+
+.table .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-transform: capitalize;
+}
+
+/* Star Rating Display */
+.stars {
+    font-size: 0.9rem;
+    color: #ffc107;
+}
+
+.stars i {
+    margin-right: 0.2rem;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Feedback Actions */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.action-buttons .btn i {
+    margin-right: 0.25rem;
+}
+
+/* Badge Colors */
+.badge.bg-danger {
+    background-color: #f8534d !important;
+}
+
+.badge.bg-warning {
+    background-color: #f9a825 !important;
+    color: white !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+/* Modal Styling */
+.modal-content {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    border-radius: 10px;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 1.5rem;
+}
+
+.modal-header .btn-close {
+    transition: all 0.2s ease;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 0.7;
+}
+
+.modal-title {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 1.25rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    display: block;
+}
+
+.form-control,
+.form-select {
+    border: 1.5px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    background-color: #fff;
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+    font-size: 0.95rem;
+}
+
+.form-select option {
+    padding: 0.5rem;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.3s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #f8534d;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    color: white;
+}
+
+.btn-outline-secondary {
+    border: 1.5px solid #dee2e6;
+    color: #6c757d;
+    background-color: white;
+}
+
+.btn-outline-secondary:hover {
+    border-color: #6c757d;
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+/* Card Styling */
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 1.25rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.card-header h5 {
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Alert Styling */
+.alert {
+    border-radius: 6px;
+    border: none;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert i {
+    margin-right: 0.5rem;
+}
+
+/* Filter Section */
+.filter-section {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.filter-section .form-label {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.filter-section .form-control,
+.filter-section .form-select {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.8rem;
+}
+
+/* Rating Stars in Modal */
+.star-rating {
+    color: #ffc107;
+    cursor: pointer;
+    letter-spacing: 8px;
+}
+
+.star-rating i {
+    transition: all 0.2s ease;
+}
+
+.star-rating i:hover {
+    transform: scale(1.2);
+    text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+}
+
+.star-rating i.fas {
+    font-weight: 900;
+}
+
+/* Readonly Fields */
+input[readonly],
+textarea[readonly] {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .stat-card h4 {
+        font-size: 1.5rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .action-buttons {
+        gap: 0.25rem;
+    }
+
+    .action-buttons .btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control,
+    .form-select {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.7rem;
+    }
+}
+
+/* Text Utilities */
+.text-danger {
+    color: #f8534d !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-warning {
+    color: #f9a825 !important;
+}
+
+.text-info {
+    color: #0dcaf0 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
