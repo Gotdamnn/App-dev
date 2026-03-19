@@ -77,7 +77,7 @@ async function loadFeedback() {
         if (!data.success || !data.feedback || data.feedback.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
+                    <td colspan="7" class="text-center text-muted py-4">
                         <i class="fas fa-inbox"></i> No feedback yet
                     </td>
                 </tr>
@@ -97,17 +97,10 @@ async function loadFeedback() {
                 <td>${item.user_email}</td>
                 <td>
                     ${item.app_rating ? `
-                        <div class="stars">
-                            ${Array(5).fill(0).map((_, i) => 
-                                `<i class="fa${i < item.app_rating ? 's' : 'r'} fa-star"></i>`
-                            ).join('')}
-                        </div>
-                    ` : '-'}
-                </td>
-                <td>
-                    <span class="badge" style="${getStatusColor(item.status)}">
-                        ${item.status}
-                    </span>
+                        <span class="stars" style="color: #ffc107; font-size: 14px;">
+                            ${Array(item.app_rating).fill('<i class="fas fa-star"></i>').join('')}${Array(5 - item.app_rating).fill('<i class="far fa-star"></i>').join('')}
+                        </span>
+                    ` : '<span class="text-muted">-</span>'}
                 </td>
                 <td>${new Date(item.created_at).toLocaleDateString()}</td>
                 <td>
