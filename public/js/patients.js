@@ -107,6 +107,27 @@ async function showTemperatureHistoryModal() {
         patientNameEl.textContent = currentViewedPatient.name;
     }
     
+    // Display current body temperature
+    const currentTempEl = document.getElementById('currentBodyTemperature');
+    if (currentTempEl && currentViewedPatient.body_temperature) {
+        const temp = parseFloat(currentViewedPatient.body_temperature);
+        const tempColor = temp > 38 ? '#ef4444' : temp < 36 ? '#3b82f6' : '#10b981';
+        const tempStatus = temp > 38 ? 'Fever' : temp < 36 ? 'Low' : 'Normal';
+        currentTempEl.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: linear-gradient(135deg, ${tempColor}20, ${tempColor}10); border-radius: 8px; border-left: 4px solid ${tempColor}; margin-bottom: 16px;">
+                <div>
+                    <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">Current Body Temperature</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: ${tempColor};">
+                        ${temp.toFixed(1)}°C
+                    </div>
+                    <div style="font-size: 0.75rem; color: ${tempColor}; font-weight: 500;">${tempStatus}</div>
+                </div>
+            </div>
+        `;
+    }
+    
     // Load temperature history
     await loadTemperatureHistory(currentViewedPatient.id);
     
