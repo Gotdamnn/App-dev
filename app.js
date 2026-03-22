@@ -3569,7 +3569,7 @@ app.get('/api/feedback', async (req, res) => {
         }
 
         if (rating) {
-            query += ` AND app_rating = $${params.length + 1}`;
+            query += ` AND rating = $${params.length + 1}`;
             params.push(parseInt(rating));
         }
 
@@ -3590,19 +3590,25 @@ app.get('/api/feedback', async (req, res) => {
 app.get('/api/feedback/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        
+        console.log(`📥 Fetching feedback with ID: ${id}`);
 
-        const result = await pool.query(
-            'SELECT * FROM feedback WHERE feedback_id = $1',
+        // Query the feedback table - the primary key is 'id' (UUID)
+        let result = await pool.query(
+            'SELECT * FROM feedback WHERE id = $1 LIMIT 1',
             [id]
         );
 
         if (result.rows.length === 0) {
+            console.log(`❌ Feedback not found: ${id}`);
             return res.status(404).json({ success: false, error: 'Feedback not found' });
         }
 
+        console.log(`✅ Feedback found:`, result.rows[0]);
         res.json({ success: true, feedback: result.rows[0] });
     } catch (err) {
         console.error('❌ Error fetching feedback:', err.message);
+        console.error('❌ Full error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -3610,7 +3616,7 @@ app.get('/api/feedback/:id', async (req, res) => {
 // Create new feedback
 app.post('/api/feedback', async (req, res) => {
     try {
-        const { feedback_type, subject, message, app_rating, user_email } = req.body;
+        const { feedback_type, subject, message, rating, user_email } = req.body;
 
         // Validation
         if (!feedback_type || !subject || !message || !user_email) {
@@ -3621,13 +3627,13 @@ app.post('/api/feedback', async (req, res) => {
         }
 
         const result = await pool.query(
-            `INSERT INTO feedback (feedback_type, subject, message, app_rating, user_email, status, priority)
+            `INSERT INTO feedback (feedback_type, subject, message, rating, user_email, status, priority)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,
-            [feedback_type, subject, message, app_rating || null, user_email, 'Open', 'Normal']
+            [feedback_type, subject, message, rating || null, user_email, 'Open', 'Normal']
         );
 
-        console.log('✅ Feedback created:', result.rows[0].feedback_id);
+        console.log('✅ Feedback created:', result.rows[0].id);
 
         res.status(201).json({ success: true, feedback: result.rows[0] });
     } catch (err) {
@@ -3642,15 +3648,19 @@ app.put('/api/feedback/:id', async (req, res) => {
         const { id } = req.params;
         const { status, priority, response_notes } = req.body;
 
+        console.log(`📝 Updating feedback: ${id}`, { status, priority });
+
         // Check if feedback exists
         const checkResult = await pool.query(
-            'SELECT * FROM feedback WHERE feedback_id = $1',
+            'SELECT * FROM feedback WHERE id = $1 LIMIT 1',
             [id]
         );
 
         if (checkResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Feedback not found' });
         }
+
+        const feedbackId = checkResult.rows[0].id;
 
         const result = await pool.query(
             `UPDATE feedback 
@@ -3660,12 +3670,12 @@ app.put('/api/feedback/:id', async (req, res) => {
                  response_date = CASE WHEN $3 IS NOT NULL THEN CURRENT_TIMESTAMP ELSE response_date END,
                  responded_by = CASE WHEN $3 IS NOT NULL THEN 'Admin' ELSE responded_by END,
                  updated_at = CURRENT_TIMESTAMP
-             WHERE feedback_id = $4
+             WHERE id = $4
              RETURNING *`,
-            [status || null, priority || null, response_notes || null, id]
+            [status || null, priority || null, response_notes || null, feedbackId]
         );
 
-        console.log('✅ Feedback updated:', id);
+        console.log('✅ Feedback updated:', feedbackId);
 
         res.json({ success: true, feedback: result.rows[0] });
     } catch (err) {
@@ -3679,9 +3689,11 @@ app.delete('/api/feedback/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
+        console.log(`🗑️ Deleting feedback: ${id}`);
+
         // Check if feedback exists
         const checkResult = await pool.query(
-            'SELECT * FROM feedback WHERE feedback_id = $1',
+            'SELECT * FROM feedback WHERE id = $1 LIMIT 1',
             [id]
         );
 
@@ -3689,7 +3701,9 @@ app.delete('/api/feedback/:id', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Feedback not found' });
         }
 
-        await pool.query('DELETE FROM feedback WHERE feedback_id = $1', [id]);
+        const feedbackId = checkResult.rows[0].id;
+
+        await pool.query('DELETE FROM feedback WHERE id = $1', [feedbackId]);
 
         console.log('✅ Feedback deleted:', id);
 

@@ -19,7 +19,6 @@
                 <h1>Employee Reports</h1>
                 <div class="report-count" id="reportCount">Loading...</div>
             </div>
-            <button class="add-report-btn" id="newReportBtn"><i class="fas fa-plus"></i> New Report</button>
         </div>
 
         <!-- Statistics Section removed -->
@@ -31,26 +30,26 @@
             </div>
             <div class="filters">
                 <select class="filter-select" id="statusFilter">
-                    <option>All Status</option>
-                    <option>Open</option>
-                    <option>In Progress</option>
-                    <option>Under Review</option>
-                    <option>Resolved</option>
-                    <option>Closed</option>
+                    <option value="">All Status</option>
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Under Review">Under Review</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
                 </select>
                 <select class="filter-select" id="severityFilter">
-                    <option>All Severity</option>
-                    <option>Low</option>
-                    <option>Medium</option>
-                    <option>High</option>
-                    <option>Critical</option>
+                    <option value="">All Severity</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
                 </select>
-                <select class="filter-select" id="typeFilter">
-                    <option>All Types</option>
-                    <option>Complaint</option>
-                    <option>Incident</option>
-                    <option>Disciplinary</option>
-                    <option>Performance</option>
+                <select class="filter-select" id="reportTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="Complaint">Complaint</option>
+                    <option value="Incident">Incident</option>
+                    <option value="Disciplinary">Disciplinary</option>
+                    <option value="Performance">Performance</option>
                 </select>
             </div>
         </div>
@@ -85,19 +84,19 @@
 
     <!-- Report Details Modal -->
     <div class="modal fade" id="detailsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Report Details</h5>
+                    <h5 class="modal-title fw-bold">Report Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="detailsModalBody">
                     Loading...
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="closeBtn" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="editDetailsBtn">Edit</button>
                     <button type="button" class="btn btn-success" id="resolveBtn">Mark as Resolved</button>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -108,7 +107,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Employee Report</h5>
+                    <h5 class="modal-title" id="reportModalTitle">New Employee Report</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">

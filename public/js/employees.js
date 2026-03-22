@@ -6,6 +6,8 @@ if (typeof API_BASE === 'undefined') {
 let employees = [];
 let departments = [];
 let deleteEmployeeId = null;
+let currentPage = 1;
+const itemsPerPage = 15;
 
 // Load employees and departments on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -217,6 +219,7 @@ async function loadEmployees() {
             throw new Error('Failed to fetch employees');
         }
         employees = await response.json();
+        currentPage = 1;
         renderEmployees(employees);
     } catch (error) {
         console.error('Error loading employees:', error);
@@ -224,7 +227,7 @@ async function loadEmployees() {
     }
 }
 
-// Render employees to table
+// Render employees to table with pagination
 function renderEmployees(employeeList) {
     const tbody = document.getElementById('employeesTableBody');
     if (!tbody) return;
@@ -244,10 +247,24 @@ function renderEmployees(employeeList) {
                 </td>
             </tr>
         `;
+        updateEmployeePagination(0, 0);
         return;
     }
 
-    tbody.innerHTML = employeeList.map(employee => {
+    // Calculate pagination
+    const totalPages = Math.ceil(employeeList.length / itemsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+        currentPage = totalPages;
+    }
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const paginatedEmployees = employeeList.slice(start, end);
+
+    // Update pagination
+    updateEmployeePagination(currentPage, totalPages);
+
+    tbody.innerHTML = paginatedEmployees.map(employee => {
         const fullName = `${employee.first_name || ''} ${employee.middle_name || ''} ${employee.last_name || ''}`.replace(/\s+/g, ' ').trim();
         const initials = getInitials(fullName);
         const jobClass = employee.job_title ? employee.job_title.toLowerCase().replace(/\s+/g, '-') : 'other';
@@ -290,6 +307,49 @@ function renderEmployees(employeeList) {
     }).join('');
 }
 
+// Update employee pagination controls
+function updateEmployeePagination(currentPageNum, totalPages) {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+
+    if (totalPages === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const html = `
+        <div class="pagination">
+            <button class="pagination-btn" id="prevBtn" ${currentPageNum === 1 ? 'disabled' : ''} onclick="goToEmployeePreviousPage()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="pagination-info">
+                <span id="pageInfo">Page ${currentPageNum} of ${totalPages}</span>
+            </div>
+            <button class="pagination-btn" id="nextBtn" ${currentPageNum >= totalPages ? 'disabled' : ''} onclick="goToEmployeeNextPage()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Employee navigation functions
+function goToEmployeePreviousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        renderEmployees(employees);
+    }
+}
+
+function goToEmployeeNextPage() {
+    const totalPages = Math.ceil(employees.length / itemsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderEmployees(employees);
+    }
+}
+
 // Filter employees
 function filterEmployees() {
     const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
@@ -313,6 +373,7 @@ function filterEmployees() {
         return matchesSearch && matchesDepartment && matchesJobTitle && matchesStatus;
     });
 
+    currentPage = 1;
     renderEmployees(filtered);
 }
 

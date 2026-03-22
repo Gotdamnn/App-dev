@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('❌ Submit button NOT found');
     }
 
-    document.getElementById('newReportBtn')?.addEventListener('click', openNewReportModal);
+    // Event listeners removed for deleted buttons
+    // document.getElementById('newReportBtn')?.addEventListener('click', openNewReportModal);
     document.getElementById('filterBtn')?.addEventListener('click', applyFilters);
     document.getElementById('resetBtn')?.addEventListener('click', resetFilters);
     document.getElementById('editDetailsBtn')?.addEventListener('click', editReport);
@@ -80,6 +81,8 @@ async function loadReports(page = 1) {
         const severity = document.getElementById('severityFilter')?.value || '';
         const reportType = document.getElementById('reportTypeFilter')?.value || '';
 
+        console.log('🔍 Filter values:', { search, status, severity, reportType });
+
         const params = new URLSearchParams({
             search,
             status,
@@ -100,6 +103,7 @@ async function loadReports(page = 1) {
         console.log('📊 Reports data received:', data);
 
         if (data.success && data.data) {
+            console.log(`✅ Calling displayReports with ${data.data.length} records`);
             displayReports(data.data);
             displayPagination(data.pagination);
             currentPage = page;
@@ -117,15 +121,25 @@ async function loadReports(page = 1) {
 
 // Display reports in table
 function displayReports(reports) {
+    console.log('🎯 displayReports called with:', reports);
     const tbody = document.getElementById('reportsTableBody');
+    
+    console.log('📝 tbody element:', tbody);
 
     if (!reports || reports.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No reports found</td></tr>';
+        console.log('⚠️ No reports - showing empty message');
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No reports found</td></tr>';
+        const reportCount = document.getElementById('reportCount');
+        if (reportCount) reportCount.textContent = '0 Reports';
         return;
     }
 
-    tbody.innerHTML = reports.map(report => `
+    console.log(`📊 Mapping ${reports.length} reports to HTML`);
+    const html = reports.map((report, i) => {
+        console.log(`  Report ${i}:`, report);
+        return `
         <tr>
+            <td><input type="checkbox" value="${report.report_id}"></td>
             <td><strong>#${report.report_id}</strong></td>
             <td>${report.employee_name || 'N/A'}</td>
             <td>${report.department_name || 'N/A'}</td>
@@ -153,36 +167,44 @@ function displayReports(reports) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
+    
+    console.log('✅ Setting tbody innerHTML:', html.substring(0, 100) + '...');
+    tbody.innerHTML = html;
+    console.log('✅ HTML rendered successfully');
+    
+    // Update report count
+    const reportCount = document.getElementById('reportCount');
+    if (reportCount) {
+        reportCount.textContent = `${reports.length} Report${reports.length === 1 ? '' : 's'}`;
+    }
 }
 
 // Display pagination
 function displayPagination(pagination) {
     const container = document.getElementById('paginationContainer');
+    if (!container || !pagination) {
+        console.warn('⚠️ Pagination container or data missing');
+        return;
+    }
+    
     const { page, pages } = pagination;
+    console.log(`📄 Rendering pagination: page ${page} of ${pages}`);
 
-    let html = '';
-
-    // Previous
-    if (page > 1) {
-        html += `<li class="page-item"><a class="page-link" onclick="loadReports(${page - 1})">Previous</a></li>`;
-    }
-
-    // Page numbers
-    for (let i = 1; i <= pages; i++) {
-        if (i === page) {
-            html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-        } else if (i === 1 || i === pages || (i >= page - 2 && i <= page + 2)) {
-            html += `<li class="page-item"><a class="page-link" onclick="loadReports(${i})">${i}</a></li>`;
-        } else if (i === page - 3 || i === page + 3) {
-            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-        }
-    }
-
-    // Next
-    if (page < pages) {
-        html += `<li class="page-item"><a class="page-link" onclick="loadReports(${page + 1})">Next</a></li>`;
-    }
+    let html = `
+        <div class="pagination">
+            <button class="pagination-btn" id="prevBtn" ${page === 1 ? 'disabled' : ''} onclick="loadReports(${page - 1})">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="pagination-info">
+                <span id="pageInfo">Page ${page} of ${pages}</span>
+            </div>
+            <button class="pagination-btn" id="nextBtn" ${page >= pages ? 'disabled' : ''} onclick="loadReports(${page + 1})">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
 
     container.innerHTML = html;
 }
@@ -359,12 +381,9 @@ async function submitReport() {
         const employeeSelect = document.getElementById('employeeSelect');
         const departmentSelect = document.getElementById('departmentSelect');
         const reportTypeSelect = document.getElementById('reportTypeSelect');
-        const categoryInput = document.getElementById('categoryInput');
-        const titleInput = document.getElementById('titleInput');
-        const descriptionInput = document.getElementById('descriptionInput');
-        const reportedByInput = document.getElementById('reportedByInput');
+        const titleInput = document.getElementById('reportTitle');
+        const descriptionInput = document.getElementById('reportDescription');
         const severitySelect = document.getElementById('severitySelect');
-        const prioritySelect = document.getElementById('prioritySelect');
 
         // Validate required selects
         if (!employeeSelect?.value) {
@@ -407,12 +426,9 @@ async function submitReport() {
             department_id: departmentSelect?.value ? parseInt(departmentSelect.value) : null,
             department_name: deptName,
             report_type: reportTypeSelect?.value || '',
-            category: categoryInput?.value?.trim() || '',
             title: titleInput?.value?.trim() || '',
             description: descriptionInput?.value?.trim() || '',
-            reported_by: reportedByInput?.value?.trim() || '',
-            severity: severitySelect?.value || 'Medium',
-            priority: prioritySelect?.value || 'Normal'
+            severity: severitySelect?.value || 'Medium'
         };
 
         console.log('📤 Report data prepared:', reportData);
@@ -474,9 +490,18 @@ async function submitReport() {
 
 // View report details
 async function viewReport(reportId) {
+    console.log(`👁️ View Report clicked for ID: ${reportId}`);
     try {
-        const response = await fetch(`${API_BASE}/employee-reports/${reportId}`);
+        const apiUrl = `${API_BASE}/employee-reports/${reportId}`;
+        console.log(`📥 Fetching from: ${apiUrl}`);
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log(`📄 Report data received:`, data);
 
         if (data.success) {
             const report = data.data;
@@ -484,94 +509,97 @@ async function viewReport(reportId) {
 
             const content = `
                 <div class="report-details">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Report ID</h6>
-                            <p>#${report.report_id}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Report Type</h6>
+                    <div class="detail-field">
+                        <label>Report ID</label>
+                        <p>#${report.report_id}</p>
+                    </div>
+
+                    <div class="detail-row">
+                        <div class="detail-field">
+                            <label>Report Type</label>
                             <p><span class="badge bg-info">${report.report_type}</span></p>
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Employee</h6>
-                            <p>${report.employee_name}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Department</h6>
-                            <p>${report.department_name}</p>
+                        <div class="detail-field">
+                            <label>Priority</label>
+                            <p><span class="badge bg-warning text-dark">${report.priority || 'Normal'}</span></p>
                         </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <h6 class="text-muted">Severity</h6>
+                    <div class="detail-row">
+                        <div class="detail-field">
+                            <label>Employee</label>
+                            <p>${report.employee_name || 'N/A'}</p>
+                        </div>
+                        <div class="detail-field">
+                            <label>Department</label>
+                            <p>${report.department_name || 'N/A'}</p>
+                        </div>
+                    </div>
+
+                    <div class="detail-row">
+                        <div class="detail-field">
+                            <label>Severity</label>
                             <p><span class="badge bg-${getSeverityColor(report.severity)}">${report.severity}</span></p>
                         </div>
-                        <div class="col-md-4">
-                            <h6 class="text-muted">Status</h6>
+                        <div class="detail-field">
+                            <label>Status</label>
                             <p><span class="badge bg-${getStatusColor(report.status)}">${report.status}</span></p>
                         </div>
-                        <div class="col-md-4">
-                            <h6 class="text-muted">Priority</h6>
-                            <p><span class="badge bg-warning text-dark">${report.priority}</span></p>
-                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <h6 class="text-muted">Title</h6>
-                        <p>${report.title}</p>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="text-muted">Description</h6>
-                        <p>${report.description}</p>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Reported By</h6>
-                            <p>${report.reported_by || 'System'}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Report Date</h6>
+                    <div class="detail-row">
+                        <div class="detail-field">
+                            <label>Report Date</label>
                             <p>${formatDate(report.report_date)}</p>
                         </div>
+                        <div class="detail-field">
+                            <label>Reported By</label>
+                            <p>${report.reported_by || 'System'}</p>
+                        </div>
+                    </div>
+
+                    <div class="separator"></div>
+
+                    <div class="detail-field">
+                        <label>Title</label>
+                        <p>${report.title || 'N/A'}</p>
+                    </div>
+
+                    <div class="detail-field">
+                        <label>Description</label>
+                        <p style="white-space: pre-wrap; word-wrap: break-word;">${report.description || 'N/A'}</p>
                     </div>
 
                     ${report.assigned_to ? `
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Assigned To</h6>
+                        <div class="detail-row">
+                            <div class="detail-field">
+                                <label>Assigned To</label>
                                 <p>${report.assigned_to}</p>
                             </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Assigned Date</h6>
+                            <div class="detail-field">
+                                <label>Assigned Date</label>
                                 <p>${report.assigned_date ? formatDate(report.assigned_date) : 'N/A'}</p>
                             </div>
                         </div>
                     ` : ''}
 
                     ${report.resolution_notes ? `
-                        <div class="mb-3">
-                            <h6 class="text-muted">Resolution Notes</h6>
-                            <p>${report.resolution_notes}</p>
+                        <div class="detail-field">
+                            <label>Resolution Notes</label>
+                            <p style="white-space: pre-wrap; word-wrap: break-word;">${report.resolution_notes}</p>
                         </div>
                     ` : ''}
 
                     ${report.action_taken ? `
-                        <div class="mb-3">
-                            <h6 class="text-muted">Action Taken</h6>
+                        <div class="detail-field">
+                            <label>Action Taken</label>
                             <p>${report.action_taken}</p>
                         </div>
                     ` : ''}
                 </div>
             `;
 
-            document.getElementById('detailsContent').innerHTML = content;
+            document.getElementById('detailsModalBody').innerHTML = content;
             
             // Show/hide action buttons based on status
             if (report.status === 'Resolved' || report.status === 'Closed') {
@@ -582,7 +610,25 @@ async function viewReport(reportId) {
                 document.getElementById('editDetailsBtn').style.display = 'block';
             }
 
-            detailsModal.show();
+            // Show modal with error handling
+            if (detailsModal) {
+                try {
+                    detailsModal.show();
+                    console.log('✅ Details modal opened successfully');
+                } catch (modalError) {
+                    console.error('❌ Modal show() error:', modalError);
+                    // Fallback: try using Bootstrap directly
+                    const modalElement = document.getElementById('detailsModal');
+                    if (modalElement) {
+                        const bsModal = new bootstrap.Modal(modalElement);
+                        bsModal.show();
+                        console.log('✅ Modal opened via fallback');
+                    }
+                }
+            } else {
+                console.error('❌ detailsModal object is null/undefined');
+                showAlert('Modal initialization error', 'danger');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
@@ -593,31 +639,60 @@ async function viewReport(reportId) {
 // Edit report
 async function editReport() {
     try {
+        console.log(`✏️ Editing report: ${currentReportId}`);
+        
         const response = await fetch(`${API_BASE}/employee-reports/${currentReportId}`);
         const data = await response.json();
 
         if (data.success) {
             const report = data.data;
+            console.log('📋 Report data loaded for editing:', report);
 
-            // Populate form
-            document.getElementById('employeeSelect').value = report.employee_id;
-            document.getElementById('departmentSelect').value = report.department_id;
-            document.getElementById('reportTypeSelect').value = report.report_type;
-            document.getElementById('categoryInput').value = report.category;
-            document.getElementById('titleInput').value = report.title;
-            document.getElementById('descriptionInput').value = report.description;
-            document.getElementById('reportedByInput').value = report.reported_by || '';
-            document.getElementById('severitySelect').value = report.severity;
-            document.getElementById('prioritySelect').value = report.priority;
-            document.getElementById('reportId').value = currentReportId;
+            // Populate form fields with correct IDs
+            const fields = {
+                'employeeSelect': report.employee_id,
+                'departmentSelect': report.department_id,
+                'reportTypeSelect': report.report_type,
+                'severitySelect': report.severity,
+                'reportTitle': report.title,
+                'reportDescription': report.description
+            };
+
+            for (const [fieldId, value] of Object.entries(fields)) {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    element.value = value || '';
+                    console.log(`✅ Set ${fieldId} = ${value}`);
+                } else {
+                    console.warn(`⚠️ Field not found: ${fieldId}`);
+                }
+            }
 
             document.getElementById('reportModalTitle').textContent = 'Edit Report #' + currentReportId;
-            detailsModal.hide();
-            reportModal.show();
+            
+            // Hide details modal and show edit modal
+            if (detailsModal) {
+                try {
+                    detailsModal.hide();
+                    console.log('✅ Details modal hidden');
+                } catch (e) {
+                    console.warn('⚠️ Error hiding details modal:', e);
+                }
+            }
+            
+            if (reportModal) {
+                reportModal.show();
+                console.log('✅ Edit modal opened');
+            } else {
+                console.error('❌ reportModal not initialized');
+                showAlert('Modal error', 'danger');
+            }
+        } else {
+            showAlert(data.error || 'Failed to load report', 'danger');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showAlert('Failed to load report for editing', 'danger');
+        console.error('❌ Error editing report:', error);
+        showAlert('Failed to load report for editing: ' + error.message, 'danger');
     }
 }
 

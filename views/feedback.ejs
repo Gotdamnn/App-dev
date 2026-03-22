@@ -19,7 +19,6 @@
                 <h1>User Feedback</h1>
                 <div class="feedback-count" id="feedbackCount">Loading...</div>
             </div>
-            <button class="add-feedback-btn" id="newFeedbackBtn"><i class="fas fa-plus"></i> New Feedback</button>
         </div>
 
         <!-- Statistics Section removed -->
@@ -31,27 +30,27 @@
             </div>
             <div class="filters">
                 <select class="filter-select" id="statusFilter">
-                    <option>All Status</option>
-                    <option>Open</option>
-                    <option>Under Review</option>
-                    <option>Acknowledged</option>
-                    <option>In Progress</option>
-                    <option>Resolved</option>
+                    <option value="">All Status</option>
+                    <option value="Open">Open</option>
+                    <option value="Under Review">Under Review</option>
+                    <option value="Acknowledged">Acknowledged</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
                 </select>
                 <select class="filter-select" id="typeFilter">
-                    <option>All Types</option>
-                    <option>Bug Report</option>
-                    <option>Feature Request</option>
-                    <option>General Feedback</option>
-                    <option>Complaint</option>
+                    <option value="">All Types</option>
+                    <option value="Bug Report">Bug Report</option>
+                    <option value="Feature Request">Feature Request</option>
+                    <option value="General Feedback">General Feedback</option>
+                    <option value="Complaint">Complaint</option>
                 </select>
                 <select class="filter-select" id="ratingFilter">
-                    <option>All Ratings</option>
-                    <option>5 Stars</option>
-                    <option>4 Stars</option>
-                    <option>3 Stars</option>
-                    <option>2 Stars</option>
-                    <option>1 Star</option>
+                    <option value="">All Ratings</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
                 </select>
             </div>
         </div>
@@ -76,11 +75,20 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="pagination-btn" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+            <div class="pagination-info">
+                <span id="pageInfo">Page 1 of 1</span>
+            </div>
+            <button class="pagination-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+        </div>
     </div>
 
     <!-- Feedback Details Modal -->
     <div class="modal fade" id="feedbackModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Feedback Details</h5>
@@ -196,7 +204,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveFeedbackBtn">Save Feedback</button>
+                    <button type="button" class="btn btn-primary" id="submitNewFeedbackBtn">Save Feedback</button>
                 </div>
             </div>
         </div>

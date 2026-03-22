@@ -6,6 +6,8 @@ if (typeof API_BASE === 'undefined') {
 let allPatients = [];
 let pendingDeletePatientId = null;
 let currentViewedPatient = null;
+let currentPage = 1;
+const itemsPerPage = 15;
 
 // Show status modal instead of browser alert
 function showStatusModal(title, message, isSuccess = true) {
@@ -428,6 +430,7 @@ async function loadPatients() {
         const response = await fetch(`${API_BASE}/patients`);
         if (response.ok) {
             allPatients = await response.json();
+            currentPage = 1;
             renderPatients(allPatients);
         } else {
             console.error('Failed to load patients');
@@ -437,21 +440,19 @@ async function loadPatients() {
     }
 }
 
-// Render patients in table
+// Render patients in table with pagination
 function renderPatients(patients) {
     const tbody = document.querySelector('.patients-table tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = '';
+    // Filter out undefined/null patients
+    const validPatients = patients.filter(p => p && typeof p === 'object' && p.id);
 
     // Update patient count
     const patientCountEl = document.getElementById('patientCount');
     if (patientCountEl) {
-        patientCountEl.textContent = `${patients.length} patient${patients.length !== 1 ? 's' : ''} found`;
+        patientCountEl.textContent = `${validPatients.length} patient${validPatients.length !== 1 ? 's' : ''} found`;
     }
-
-    // Filter out undefined/null patients
-    const validPatients = patients.filter(p => p && typeof p === 'object' && p.id);
 
     if (validPatients.length === 0) {
         tbody.innerHTML = `
@@ -462,13 +463,73 @@ function renderPatients(patients) {
                 </td>
             </tr>
         `;
+        
+        // Update pagination
+        updatePagination(0, 0);
         return;
     }
 
-    validPatients.forEach(patient => {
+    // Calculate pagination
+    const totalPages = Math.ceil(validPatients.length / itemsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+        currentPage = totalPages;
+    }
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const paginatedPatients = validPatients.slice(start, end);
+
+    // Update pagination
+    updatePagination(currentPage, totalPages);
+
+    tbody.innerHTML = '';
+    paginatedPatients.forEach(patient => {
         const row = createPatientRow(patient);
         tbody.appendChild(row);
     });
+}
+
+// Update pagination controls
+function updatePagination(currentPageNum, totalPages) {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+
+    if (totalPages === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const html = `
+        <div class="pagination">
+            <button class="pagination-btn" id="prevBtn" ${currentPageNum === 1 ? 'disabled' : ''} onclick="goToPreviousPage()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="pagination-info">
+                <span id="pageInfo">Page ${currentPageNum} of ${totalPages}</span>
+            </div>
+            <button class="pagination-btn" id="nextBtn" ${currentPageNum >= totalPages ? 'disabled' : ''} onclick="goToNextPage()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Navigation functions
+function goToPreviousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        renderPatients(allPatients);
+    }
+}
+
+function goToNextPage() {
+    const totalPages = Math.ceil(allPatients.length / itemsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderPatients(allPatients);
+    }
 }
 
 // Create patient row element
@@ -550,6 +611,7 @@ function filterPatients() {
         return matchesSearch && matchesStatus && matchesTemp;
     });
 
+    currentPage = 1;
     renderPatients(filtered);
 }
 
