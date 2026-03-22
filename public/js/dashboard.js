@@ -162,14 +162,6 @@ async function loadRecentActivity() {
         `;
     }
 }
-                <div class="activity-details">
-                    <div class="activity-title">Error loading activity</div>
-                    <div class="activity-meta">Could not connect to server</div>
-                </div>
-            </li>
-        `;
-    }
-}
 
 // ===== ALERT COUNT =====
 async function loadAlertCount() {

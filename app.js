@@ -3707,31 +3707,26 @@ app.get('/api/feedback-stats', async (req, res) => {
         
         let whereClause = 'WHERE 1=1';
         const params = [];
-        let paramIndex = 1;
 
         // Apply filters
         if (search) {
-            whereClause += ` AND (subject ILIKE ${paramIndex} OR message ILIKE ${paramIndex} OR user_email ILIKE ${paramIndex})`;
+            whereClause += ` AND (subject ILIKE $${params.length + 1} OR message ILIKE $${params.length + 1} OR user_email ILIKE $${params.length + 1})`;
             params.push(`%${search}%`);
-            paramIndex++;
         }
 
         if (status) {
-            whereClause += ` AND status = ${paramIndex}`;
+            whereClause += ` AND status = $${params.length + 1}`;
             params.push(status);
-            paramIndex++;
         }
 
         if (type) {
-            whereClause += ` AND feedback_type = ${paramIndex}`;
+            whereClause += ` AND feedback_type = $${params.length + 1}`;
             params.push(type);
-            paramIndex++;
         }
 
         if (rating) {
-            whereClause += ` AND app_rating = ${paramIndex}`;
+            whereClause += ` AND app_rating = $${params.length + 1}`;
             params.push(parseInt(rating));
-            paramIndex++;
         }
 
         // Build queries with filters
