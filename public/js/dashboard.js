@@ -92,10 +92,36 @@ async function loadRecentActivity() {
     if (!activityList) return;
     
     try {
-        const response = await fetch(`${API_BASE}/dashboard/activity`);
-        if (!response.ok) throw new Error('Failed to fetch activity');
+        // Fetch both dashboard activities and audit logs (logins/logouts)
+        const [dashResponse, auditResponse] = await Promise.all([
+            fetch(`${API_BASE}/dashboard/activity`),
+            fetch(`${API_BASE}/audit-logs?action=Login,Logout&limit=10`)
+        ]);
         
-        const activities = await response.json();
+        let activities = [];
+        
+        // Add dashboard activities
+        if (dashResponse.ok) {
+            const dashActivities = await dashResponse.json();
+            activities = activities.concat(dashActivities.map(a => ({ ...a, source: 'dashboard' })));
+        }
+        
+        // Add authentication activities from audit logs
+        if (auditResponse.ok) {
+            const auditLogs = await auditResponse.json();
+            activities = activities.concat(auditLogs.map(log => ({
+                type: log.action === 'Login' ? 'login' : 'logout',
+                title: log.action === 'Login' ? 'User Logged In' : 'User Logged Out',
+                description: `${log.admin_name} ${log.action.toLowerCase()}`,
+                user: log.admin_name,
+                timestamp: log.timestamp,
+                source: 'audit',
+                details: log.details
+            })));
+        }
+        
+        // Sort by timestamp descending
+        activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
         if (activities.length === 0) {
             activityList.innerHTML = `
@@ -103,7 +129,7 @@ async function loadRecentActivity() {
                     <span class="activity-dot dot-blue"></span>
                     <div class="activity-details">
                         <div class="activity-title">No recent activity</div>
-                        <div class="activity-meta">Add patients or devices to see activity</div>
+                        <div class="activity-meta">Add patients or login/logout to see activity</div>
                     </div>
                 </li>
             `;
@@ -128,6 +154,14 @@ async function loadRecentActivity() {
         activityList.innerHTML = `
             <li>
                 <span class="activity-dot dot-red"></span>
+                <div class="activity-details">
+                    <div class="activity-title">Error loading activity</div>
+                    <div class="activity-meta">Could not connect to server</div>
+                </div>
+            </li>
+        `;
+    }
+}
                 <div class="activity-details">
                     <div class="activity-title">Error loading activity</div>
                     <div class="activity-meta">Could not connect to server</div>
@@ -358,7 +392,12 @@ function getDotClass(type) {
         'department': 'dot-orange',
         'device': 'dot-purple',
         'alert': 'dot-red',
-        'report': 'dot-blue'
+        'report': 'dot-blue',
+        'login': 'dot-green',
+        'logout': 'dot-orange',
+        'create': 'dot-green',
+        'update': 'dot-yellow',
+        'delete': 'dot-red'
     };
     return classes[type] || 'dot-blue';
 }
@@ -605,17 +644,24 @@ function closeNotificationPanel() {
 // Load notifications from backend notifications table
 async function loadNotifications() {
     try {
-        // Fetch notifications from backend with cache-busting
-        const response = await fetch(`${API_BASE}/notifications?t=${Date.now()}`, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache'
-            }
-        });
-        if (response.ok) {
-            const notifications = await response.json();
-            // Map notifications from database
-            notificationsList = notifications.map(notif => ({
+        // Fetch both regular notifications and authentication activities
+        const [notifResponse, auditResponse] = await Promise.all([
+            fetch(`${API_BASE}/notifications?t=${Date.now()}`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+            }),
+            fetch(`${API_BASE}/audit-logs?action=Login,Logout&limit=20`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+            })
+        ]);
+        
+        let notifications = [];
+        
+        // Map regular notifications
+        if (notifResponse.ok) {
+            const data = await notifResponse.json();
+            notifications = data.map(notif => ({
                 id: notif.id,
                 title: notif.title,
                 message: notif.message,
@@ -625,11 +671,30 @@ async function loadNotifications() {
                 read: notif.read,
                 category: notif.category || 'System'
             }));
-        } else {
-            notificationsList = [];
         }
+        
+        // Map authentication activities as notifications
+        if (auditResponse.ok) {
+            const auditLogs = await auditResponse.json();
+            const authNotifs = auditLogs.map(log => ({
+                id: `auth_${log.id}`,
+                title: log.action === 'Login' ? 'User Login' : 'User Logout',
+                message: `${log.admin_name} ${log.action === 'Login' ? 'logged in' : 'logged out'} from IP ${log.ip_address}`,
+                type: log.action === 'Login' ? 'login' : 'logout',
+                icon: log.action === 'Login' ? 'fas fa-sign-in-alt' : 'fas fa-sign-out-alt',
+                timestamp: new Date(log.timestamp),
+                read: false,
+                category: 'Authentication'
+            }));
+            notifications = notifications.concat(authNotifs);
+        }
+        
+        // Sort by timestamp descending
+        notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        notificationsList = notifications.slice(0, 50); // Keep latest 50
     } catch (error) {
-        console.log('Loading notifications from backend:', error.message);
+        console.log('Loading notifications:', error.message);
         notificationsList = [];
     }
     
@@ -721,7 +786,12 @@ function renderNotifications(filter) {
     
     let filteredNotifications = notificationsList;
     if (filter !== 'all') {
-        filteredNotifications = notificationsList.filter(n => n.type === filter);
+        // Handle category-based filtering for Authentication
+        if (filter === 'auth' || filter === 'authentication') {
+            filteredNotifications = notificationsList.filter(n => n.category === 'Authentication' || n.type === 'login' || n.type === 'logout');
+        } else {
+            filteredNotifications = notificationsList.filter(n => n.type === filter || n.category === filter);
+        }
     }
     
     if (filteredNotifications.length === 0) {
@@ -735,7 +805,7 @@ function renderNotifications(filter) {
     }
     
     notificationList.innerHTML = filteredNotifications.map(notification => `
-        <div class="notification-item ${notification.read ? '' : 'unread'}" onclick="markNotificationAsRead(${notification.id})">
+        <div class="notification-item ${notification.read ? '' : 'unread'}" onclick="markNotificationAsRead('${notification.id}')">
             <div class="notification-icon ${notification.type}">
                 <i class="${notification.icon}"></i>
             </div>
@@ -848,15 +918,23 @@ function startNotificationListener() {
     // Poll for new notifications every 10 seconds
     setInterval(async () => {
         try {
-            const response = await fetch(`${API_BASE}/notifications?t=${Date.now()}`, {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache'
-                }
-            });
-            if (response.ok) {
-                const notifications = await response.json();
-                const newNotifications = notifications.map(notif => ({
+            const [notifResponse, auditResponse] = await Promise.all([
+                fetch(`${API_BASE}/notifications?t=${Date.now()}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                }),
+                fetch(`${API_BASE}/audit-logs?action=Login,Logout&limit=5&after=${lastCheckTime.toISOString()}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                })
+            ]);
+            
+            let newNotifications = [];
+            
+            // Process regular notifications
+            if (notifResponse.ok) {
+                const notifications = await notifResponse.json();
+                newNotifications = notifications.map(notif => ({
                     id: notif.id,
                     title: notif.title,
                     message: notif.message,
@@ -866,23 +944,39 @@ function startNotificationListener() {
                     read: notif.read,
                     category: notif.category || 'System'
                 }));
-                
-                // Check for new notifications
-                const existingIds = notificationsList.map(n => n.id);
-                const addedNotifications = newNotifications.filter(n => !existingIds.includes(n.id));
-                
-                if (addedNotifications && addedNotifications.length > 0) {
-                    // Add new notifications to the list
-                    notificationsList = [...addedNotifications, ...notificationsList];
-                    updateNotificationUI();
-                    
-                    // Show toast for each new notification
-                    addedNotifications.forEach(notif => {
-                        showNotificationToast(notif.title, notif.message, notif.type);
-                    });
-                }
-                lastCheckTime = new Date();
             }
+            
+            // Process authentication activities
+            if (auditResponse.ok) {
+                const auditLogs = await auditResponse.json();
+                const authNotifs = auditLogs.map(log => ({
+                    id: `auth_${log.id}`,
+                    title: log.action === 'Login' ? 'User Login' : 'User Logout',
+                    message: `${log.admin_name} ${log.action === 'Login' ? 'logged in' : 'logged out'} from IP ${log.ip_address}`,
+                    type: log.action === 'Login' ? 'login' : 'logout',
+                    icon: log.action === 'Login' ? 'fas fa-sign-in-alt' : 'fas fa-sign-out-alt',
+                    timestamp: new Date(log.timestamp),
+                    read: false,
+                    category: 'Authentication'
+                }));
+                newNotifications = newNotifications.concat(authNotifs);
+            }
+            
+            // Check for new notifications
+            const existingIds = notificationsList.map(n => n.id);
+            const addedNotifications = newNotifications.filter(n => !existingIds.includes(n.id));
+            
+            if (addedNotifications && addedNotifications.length > 0) {
+                // Add new notifications to the list
+                notificationsList = [...addedNotifications, ...notificationsList].slice(0, 100); // Keep max 100
+                updateNotificationUI();
+                
+                // Show toast for each new notification
+                addedNotifications.forEach(notif => {
+                    showNotificationToast(notif.title, notif.message, notif.type);
+                });
+            }
+            lastCheckTime = new Date();
         } catch (error) {
             // Silently fail if backend is not available
             console.log('Notification polling failed:', error.message);

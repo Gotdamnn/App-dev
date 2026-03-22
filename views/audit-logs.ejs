@@ -25,26 +25,26 @@
         <div class="audit-controls">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search by Admin Name...">
+                <input type="text" id="searchInput" placeholder="Search by admin name or action...">
             </div>
             <div class="filters">
                 <select class="filter-select" id="actionTypeFilter">
                     <option value="">All Actions</option>
+                    <option value="Login">Login</option>
+                    <option value="Logout">Logout</option>
                     <option value="Create">Create</option>
                     <option value="Update">Update</option>
                     <option value="Delete">Delete</option>
-                    <option value="Login">Login</option>
-                    <option value="Logout">Logout</option>
                     <option value="View">View</option>
                     <option value="Export">Export</option>
                 </select>
                 <select class="filter-select" id="tableFilter">
-                    <option value="">All Tables</option>
-                    <option value="Staff">Staff</option>
-                    <option value="Patients">Patients</option>
-                    <option value="Employees">Employees</option>
-                    <option value="Departments">Departments</option>
-                    <option value="Devices">Devices</option>
+                    <option value="">All Types</option>
+                    <option value="Authentication">Authentication</option>
+                    <option value="Patient">Patient</option>
+                    <option value="Employee">Employee</option>
+                    <option value="Department">Department</option>
+                    <option value="Device">Device</option>
                     <option value="Settings">Settings</option>
                 </select>
                 <div class="date-range-filter">
