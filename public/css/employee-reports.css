@@ -1,4 +1,4 @@
-/* User Feedback Page Styles - Based on Patient Management Design */
+/* Employee Reports Page Styles - Based on Patient Management Design */
 
 .page-header {
     display: flex;
@@ -14,12 +14,12 @@
     color: #1f2937;
 }
 
-.feedback-count {
+.report-count {
     font-size: 0.9rem;
     color: #6b7280;
 }
 
-.add-feedback-btn {
+.add-report-btn {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -34,13 +34,13 @@
     transition: background 0.2s, box-shadow 0.2s;
 }
 
-.add-feedback-btn:hover {
+.add-report-btn:hover {
     background: #1d4ed8;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-/* Feedback Controls */
-.feedback-controls {
+/* Report Controls */
+.report-controls {
     display: flex;
     gap: 16px;
     margin-bottom: 24px;
@@ -107,6 +107,7 @@
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
+
 /* Table Container */
 .table-container {
     background: #fff;
@@ -115,18 +116,18 @@
     overflow: hidden;
 }
 
-.feedback-table {
+.reports-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.95rem;
 }
 
-.feedback-table thead {
+.reports-table thead {
     background: #f9fafb;
     border-bottom: 1px solid #e5e7eb;
 }
 
-.feedback-table th {
+.reports-table th {
     padding: 16px 12px;
     text-align: left;
     font-weight: 600;
@@ -136,32 +137,32 @@
     letter-spacing: 0.5px;
 }
 
-.feedback-table th:first-child {
+.reports-table th:first-child {
     width: 40px;
 }
 
-.feedback-table tbody tr {
+.reports-table tbody tr {
     border-bottom: 1px solid #e5e7eb;
     transition: background 0.2s;
 }
 
-.feedback-table tbody tr:hover {
+.reports-table tbody tr:hover {
     background: #f9fafb;
 }
 
-.feedback-table td {
+.reports-table td {
     padding: 16px 12px;
     color: #1f2937;
 }
 
-/* Feedback Cell */
-.feedback-cell {
+/* Report Cell */
+.report-cell {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.feedback-avatar {
+.report-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -175,16 +176,16 @@
     flex-shrink: 0;
 }
 
-.feedback-info {
+.report-info {
     min-width: 0;
 }
 
-.feedback-subject {
+.report-name {
     font-weight: 600;
     color: #1f2937;
 }
 
-.feedback-email {
+.report-detail {
     font-size: 0.85rem;
     color: #9ca3af;
 }
@@ -219,9 +220,39 @@
     color: #a855f7;
 }
 
-.status-badge.acknowledged {
-    background: #e9d5ff;
-    color: #7c3aed;
+.status-badge.closed {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Severity Badge */
+.severity-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.severity-badge.low {
+    background: #dbeafe;
+    color: #0284c7;
+}
+
+.severity-badge.medium {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.severity-badge.high {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.severity-badge.critical {
+    background: #7f1d1d;
+    color: #fca5a5;
 }
 
 /* Type Badge */
@@ -234,44 +265,24 @@
     text-transform: capitalize;
 }
 
-.type-badge.bug-report {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
-.type-badge.feature-request {
-    background: #dcfce7;
-    color: #22c55e;
-}
-
-.type-badge.general-feedback {
-    background: #dbeafe;
-    color: #0284c7;
-}
-
 .type-badge.complaint {
     background: #e0e7ff;
     color: #4f46e5;
 }
 
-.type-badge.suggestion {
+.type-badge.incident {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.type-badge.disciplinary {
     background: #fce7f3;
     color: #be185d;
 }
 
-/* Rating Stars */
-.rating-stars {
-    display: flex;
-    gap: 2px;
-    font-size: 0.9rem;
-}
-
-.rating-stars .star {
-    color: #fbbf24;
-}
-
-.rating-stars .star.empty {
-    color: #d1d5db;
+.type-badge.performance {
+    background: #dcfce7;
+    color: #22c55e;
 }
 
 /* Action Buttons */
@@ -325,7 +336,7 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-    .feedback-controls {
+    .report-controls {
         flex-direction: column;
     }
 
@@ -341,27 +352,27 @@
         flex: 1;
     }
 
-    .feedback-table th,
-    .feedback-table td {
+    .reports-table th,
+    .reports-table td {
         padding: 12px 8px;
         font-size: 0.85rem;
     }
 
-    .feedback-cell {
+    .report-cell {
         gap: 8px;
     }
 
-    .feedback-avatar {
+    .report-avatar {
         width: 32px;
         height: 32px;
         font-size: 0.8rem;
     }
 
-    .feedback-subject {
+    .report-name {
         font-size: 0.9rem;
     }
 
-    .feedback-email {
+    .report-detail {
         font-size: 0.75rem;
     }
 }
@@ -377,7 +388,7 @@
         font-size: 1.5rem;
     }
 
-    .add-feedback-btn {
+    .add-report-btn {
         width: 100%;
         justify-content: center;
     }
@@ -395,12 +406,12 @@
         width: 100%;
     }
 
-    .feedback-table {
+    .reports-table {
         font-size: 0.85rem;
     }
 
-    .feedback-table th,
-    .feedback-table td {
+    .reports-table th,
+    .reports-table td {
         padding: 8px 6px;
     }
 
@@ -409,50 +420,4 @@
         height: 32px;
         font-size: 0.8rem;
     }
-
-    .rating-stars {
-        font-size: 0.8rem;
-    }
-}
-
-    .action-buttons .btn {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.75rem;
-    }
-
-    .modal-body {
-        padding: 1rem;
-    }
-
-    .form-label {
-        font-size: 0.85rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control,
-    .form-select {
-        font-size: 0.85rem;
-        padding: 0.5rem 0.7rem;
-    }
-
-
-/* Text Utilities */
-.text-danger {
-    color: #f8534d !important;
-}
-
-.text-success {
-    color: #28a745 !important;
-}
-
-.text-warning {
-    color: #f9a825 !important;
-}
-
-.text-info {
-    color: #0dcaf0 !important;
-}
-
-.text-muted {
-    color: #6c757d !important;
 }

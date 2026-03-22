@@ -3,363 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Feedback - PatientPulse Admin</title>
-    <link rel="stylesheet" href="/css/standard.css">
+    <title>User Feedback - PatientPulse</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/feedback.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <%- include('partials/sidebar', { activePage: 'feedback' }) %>
 
-    <div class="wrapper">
-        <!-- Main Content -->
-        <main class="content">
-            <div class="container-fluid">
-                <!-- Header -->
-                <div class="page-header mb-4">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h1 class="page-title">
-                                <i class="fas fa-comments"></i> User Feedback
-                            </h1>
-                            <p class="text-muted mb-0">Manage user feedback, suggestions, and feature requests</p>
-                        </div>
-                        <div class="col-auto">
-                            <button class="btn btn-primary" id="newFeedbackBtn">
-                                <i class="fas fa-plus"></i> View Feedback Form
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Statistics Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card stat-card primary">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-icon bg-primary">
-                                        <i class="fas fa-comments"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-muted mb-1">Total Feedback</p>
-                                        <h4 class="mb-0" id="totalFeedback">0</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card stat-card warning">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-icon" style="background-color: #f9a825;">
-                                        <i class="fas fa-inbox"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-muted mb-1">Open Feedback</p>
-                                        <h4 class="mb-0" id="openFeedback">0</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card stat-card success">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-icon" style="background-color: #28a745;">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-muted mb-1">Resolved</p>
-                                        <h4 class="mb-0" id="resolvedFeedback">0</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card stat-card">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-icon" style="background-color: #fd7e14;">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-muted mb-1">Avg. Rating</p>
-                                        <h4 class="mb-0" id="avgRating">0.0</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filters -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <label class="form-label">Search</label>
-                                <input type="text" class="form-control" id="searchInput" placeholder="Search by subject, email...">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" id="statusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="Open">Open</option>
-                                    <option value="Under Review">Under Review</option>
-                                    <option value="Acknowledged">Acknowledged</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Resolved">Resolved</option>
-                                    <option value="Closed">Closed</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Type</label>
-                                <select class="form-select" id="typeFilter">
-                                    <option value="">All Types</option>
-                                    <option value="Bug Report">Bug Report</option>
-                                    <option value="Feature Request">Feature Request</option>
-                                    <option value="General Feedback">General Feedback</option>
-                                    <option value="Complaint">Complaint</option>
-                                    <option value="Suggestion">Suggestion</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Rating</label>
-                                <select class="form-select" id="ratingFilter">
-                                    <option value="">All Ratings</option>
-                                    <option value="5">5 Stars</option>
-                                    <option value="4">4 Stars</option>
-                                    <option value="3">3 Stars</option>
-                                    <option value="2">2 Stars</option>
-                                    <option value="1">1 Star</option>
-                                </select>
-                            </div>
-                            <div class="col-md-auto d-flex align-items-end">
-                                <button class="btn btn-outline-secondary" id="filterBtn">
-                                    <i class="fas fa-filter"></i> Apply
-                                </button>
-                                <button class="btn btn-outline-secondary ms-2" id="resetBtn">
-                                    <i class="fas fa-redo"></i> Reset
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Feedback Table -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-list"></i> Feedback List
-                        </h5>
-                    </div>
-                    <div class="card-body" style="padding: 0;">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped mb-0" id="feedbackTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 6%;">ID</th>
-                                        <th style="width: 14%;">Type</th>
-                                        <th style="width: 25%;">Subject</th>
-                                        <th style="width: 18%;">Email</th>
-                                        <th style="width: 10%;">Rating</th>
-                                        <th style="width: 12%;">Date</th>
-                                        <th style="width: 15%;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="feedbackTableBody">
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-spinner fa-spin"></i> Loading feedback...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>User Feedback</h1>
+                <div class="feedback-count" id="feedbackCount">Loading...</div>
             </div>
-        </main>
-    </div>
+            <button class="add-feedback-btn"><i class="fas fa-plus"></i> New Feedback</button>
+        </div>
 
-    <!-- View/Edit Feedback Modal -->
-    <div class="modal fade" id="feedbackModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">View Feedback</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Feedback Type</strong></label>
-                            <input type="text" class="form-control" id="viewType" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Request Date</strong></label>
-                            <input type="text" class="form-control" id="viewDate" readonly>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>User Email</strong></label>
-                            <input type="text" class="form-control" id="viewEmail" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>App Rating</strong></label>
-                            <div id="viewRating" class="mt-1"></div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Subject</strong></label>
-                        <input type="text" class="form-control" id="viewSubject" readonly>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Status</strong></label>
-                            <select class="form-select" id="viewStatus">
-                                <option value="Open">Open</option>
-                                <option value="Under Review">Under Review</option>
-                                <option value="Acknowledged">Acknowledged</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Resolved">Resolved</option>
-                                <option value="Closed">Closed</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Priority</strong></label>
-                            <select class="form-select" id="viewPriority">
-                                <option value="Low">Low</option>
-                                <option value="Normal">Normal</option>
-                                <option value="High">High</option>
-                                <option value="Urgent">Urgent</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label"><strong>User Message</strong></label>
-                        <textarea class="form-control" id="viewMessage" readonly rows="4"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Response Notes</strong></label>
-                        <textarea class="form-control" id="viewResponse" rows="3" placeholder="Add your response to this feedback..."></textarea>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Responded By</strong></label>
-                            <input type="text" class="form-control" id="viewRespondedBy" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Response Date</strong></label>
-                            <input type="text" class="form-control" id="viewResponseDate" readonly>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveFeedbackBtn">
-                        <i class="fas fa-save"></i> Save Changes
-                    </button>
-                </div>
+        <div class="feedback-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search by subject, email, or type...">
             </div>
+            <div class="filters">
+                <select class="filter-select" id="statusFilter">
+                    <option>All Status</option>
+                    <option>Open</option>
+                    <option>Under Review</option>
+                    <option>Acknowledged</option>
+                    <option>In Progress</option>
+                    <option>Resolved</option>
+                </select>
+                <select class="filter-select" id="typeFilter">
+                    <option>All Types</option>
+                    <option>Bug Report</option>
+                    <option>Feature Request</option>
+                    <option>General Feedback</option>
+                    <option>Complaint</option>
+                </select>
+                <select class="filter-select" id="ratingFilter">
+                    <option>All Ratings</option>
+                    <option>5 Stars</option>
+                    <option>4 Stars</option>
+                    <option>3 Stars</option>
+                    <option>2 Stars</option>
+                    <option>1 Star</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="feedback-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Subject</th>
+                        <th>Email</th>
+                        <th>Rating</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbackTableBody">
+                    <!-- Feedback data will be loaded dynamically -->
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Delete Feedback</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to delete this feedback? This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Feedback Form Modal (for reference) -->
-    <div class="modal fade" id="feedbackFormModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">User Feedback Form</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> This is the feedback form that users see. It's shown here for reference.
-                    </div>
-                    <form id="feedbackFormPreview">
-                        <div class="mb-3">
-                            <label class="form-label">Feedback Type <span class="text-danger">*</span></label>
-                            <select class="form-select" disabled>
-                                <option>Select feedback type</option>
-                                <option>Bug Report</option>
-                                <option>Feature Request</option>
-                                <option>General Feedback</option>
-                                <option>Complaint</option>
-                                <option>Suggestion</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Subject <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" placeholder="What is your feedback about?" disabled>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Message <span class="text-danger">*</span></label>
-                            <textarea class="form-control" placeholder="Please provide details about your feedback..." rows="4" disabled></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">App Rating</label>
-                            <div class="star-rating" style="font-size: 28px;">
-                                <i class="far fa-star" style="color: #ffc107; cursor: not-allowed;"></i>
-                                <i class="far fa-star" style="color: #ffc107; cursor: not-allowed;"></i>
-                                <i class="far fa-star" style="color: #ffc107; cursor: not-allowed;"></i>
-                                <i class="far fa-star" style="color: #ffc107; cursor: not-allowed;"></i>
-                                <i class="far fa-star" style="color: #ffc107; cursor: not-allowed;"></i>
-                            </div>
-                            <small class="text-muted">You rated: - / 5 Stars</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Your Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" placeholder="your.email@example.com" disabled>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/dashboard.js"></script>
     <script src="/js/feedback.js"></script>
 </body>
+</html>
 </html>
