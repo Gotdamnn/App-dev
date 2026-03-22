@@ -742,22 +742,34 @@ app.post('/api/patients', async (req, res) => {
         if (body_temperature) {
             const temperatureStatus = classifyTemperature(body_temperature);
             
-            await pool.query(
-                `INSERT INTO patient_vitals (patient_id, body_temperature, temperature_status, notes, recorded_by) 
-                VALUES ($1, $2, $3, $4, 'Mobile Registration') RETURNING id`,
-                [patient.id, body_temperature, temperatureStatus, `Initial temperature recorded during registration`]
-            );
+            try {
+                await pool.query(
+                    `INSERT INTO patient_vitals (patient_id, body_temperature, temperature_status, notes, recorded_by) 
+                    VALUES ($1, $2, $3, $4, 'Mobile Registration') RETURNING id`,
+                    [patient.id, body_temperature, temperatureStatus, `Initial temperature recorded during registration`]
+                );
+            } catch (vitalErr) {
+                console.error('⚠️  Error recording to patient_vitals:', vitalErr.message);
+            }
             
-            // Also record in temperature_history
-            await pool.query(
-                `INSERT INTO temperature_history (patient_id, temperature, temperature_status, notes, recorded_by) 
-                VALUES ($1, $2, $3, $4, 'Mobile Registration')`,
-                [patient.id, body_temperature, temperatureStatus, `Initial temperature recorded during registration`]
-            );
+            // Also record in temperature_history (optional - don't block if fails)
+            try {
+                await pool.query(
+                    `INSERT INTO temperature_history (patient_id, temperature, temperature_status, notes, recorded_by) 
+                    VALUES ($1, $2, $3, $4, 'Mobile Registration')`,
+                    [patient.id, body_temperature, temperatureStatus, `Initial temperature recorded during registration`]
+                );
+            } catch (histErr) {
+                console.warn('⚠️  Warning - temperature_history table may not exist:', histErr.message);
+            }
             
             // Create alert if temperature is abnormal
             if (temperatureStatus && temperatureStatus !== 'Normal') {
-                await createTemperatureAlert(patient.id, body_temperature, temperatureStatus, 'Mobile Registration');
+                try {
+                    await createTemperatureAlert(patient.id, body_temperature, temperatureStatus, 'Mobile Registration');
+                } catch (alertErr) {
+                    console.error('⚠️  Error creating temperature alert:', alertErr.message);
+                }
             }
         }
         
@@ -803,22 +815,34 @@ app.put('/api/patients/:id', async (req, res) => {
         if (body_temperature !== null && body_temperature !== undefined && body_temperature !== beforeState.body_temperature) {
             const temperatureStatus = classifyTemperature(body_temperature);
             
-            await pool.query(
-                `INSERT INTO patient_vitals (patient_id, body_temperature, temperature_status, recorded_by, notes) 
-                VALUES ($1, $2, $3, 'System', 'Temperature update via patient profile')`,
-                [req.params.id, body_temperature, temperatureStatus]
-            );
+            try {
+                await pool.query(
+                    `INSERT INTO patient_vitals (patient_id, body_temperature, temperature_status, recorded_by, notes) 
+                    VALUES ($1, $2, $3, 'System', 'Temperature update via patient profile')`,
+                    [req.params.id, body_temperature, temperatureStatus]
+                );
+            } catch (vitalErr) {
+                console.error('⚠️  Error recording to patient_vitals:', vitalErr.message);
+            }
             
-            // Also record in temperature_history
-            await pool.query(
-                `INSERT INTO temperature_history (patient_id, temperature, temperature_status, notes, recorded_by) 
-                VALUES ($1, $2, $3, 'Temperature update via patient profile', 'System')`,
-                [req.params.id, body_temperature, temperatureStatus]
-            );
+            // Also record in temperature_history (optional - don't block if fails)
+            try {
+                await pool.query(
+                    `INSERT INTO temperature_history (patient_id, temperature, temperature_status, notes, recorded_by) 
+                    VALUES ($1, $2, $3, 'Temperature update via patient profile', 'System')`,
+                    [req.params.id, body_temperature, temperatureStatus]
+                );
+            } catch (histErr) {
+                console.warn('⚠️  Warning - temperature_history table may not exist:', histErr.message);
+            }
             
             // Create alert if temperature is abnormal
             if (temperatureStatus && temperatureStatus !== 'Normal') {
-                await createTemperatureAlert(req.params.id, body_temperature, temperatureStatus, 'System');
+                try {
+                    await createTemperatureAlert(req.params.id, body_temperature, temperatureStatus, 'System');
+                } catch (alertErr) {
+                    console.error('⚠️  Error creating temperature alert:', alertErr.message);
+                }
             }
         }
         
@@ -839,6 +863,8 @@ app.put('/api/patients/:id', async (req, res) => {
             data: updatedPatient.rows[0]
         });
     } catch (err) {
+        console.error('❌ Error updating patient:', err.message);
+        console.error('Stack:', err.stack);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -887,18 +913,26 @@ app.post('/api/patient-vitals', async (req, res) => {
         
         const vitals = result.rows[0];
         
-        // Also record in temperature_history if temperature is provided
+        // Also record in temperature_history if temperature is provided (optional - don't block if fails)
         if (body_temperature) {
-            await pool.query(
-                `INSERT INTO temperature_history (patient_id, temperature, temperature_status, notes, recorded_by) 
-                 VALUES ($1, $2, $3, $4, $5)`,
-                [patient_id, body_temperature, temperatureStatus, notes || null, recorded_by || 'Mobile']
-            );
+            try {
+                await pool.query(
+                    `INSERT INTO temperature_history (patient_id, temperature, temperature_status, notes, recorded_by) 
+                     VALUES ($1, $2, $3, $4, $5)`,
+                    [patient_id, body_temperature, temperatureStatus, notes || null, recorded_by || 'Mobile']
+                );
+            } catch (histErr) {
+                console.warn('⚠️  Warning - temperature_history table may not exist:', histErr.message);
+            }
         }
         
         // Create alert if temperature is abnormal
         if (temperatureStatus && temperatureStatus !== 'Normal') {
-            await createTemperatureAlert(patient_id, body_temperature, temperatureStatus, recorded_by || 'Mobile');
+            try {
+                await createTemperatureAlert(patient_id, body_temperature, temperatureStatus, recorded_by || 'Mobile');
+            } catch (alertErr) {
+                console.error('⚠️  Error creating temperature alert:', alertErr.message);
+            }
         }
         
         // Log the action
