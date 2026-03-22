@@ -124,6 +124,9 @@ function setupEventListeners() {
         editForm.addEventListener('submit', saveEmployeeChanges);
     }
 
+    // Generate password button
+    setupGeneratePasswordButton();
+
     // Modal close buttons
     document.querySelectorAll('.modal-close, .btn-cancel').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -504,9 +507,62 @@ function editEmployee(id) {
     document.getElementById('editEmploymentType').value = employee.employment_type || '';
     document.getElementById('editHireDate').value = formatDateForInput(employee.hire_date);
     document.getElementById('editEmploymentStatus').value = employee.employment_status || '';
+    
+    // Clear password fields
+    document.getElementById('editPassword').value = '';
+    document.getElementById('editPasswordConfirm').value = '';
 
     const modal = document.getElementById('editEmployeeModal');
     if (modal) modal.classList.add('show');
+}
+
+// Generate random password
+function generateRandomPassword(length = 12) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
+// Handle generate password button
+function setupGeneratePasswordButton() {
+    const generateBtn = document.getElementById('generatePasswordBtn');
+    if (!generateBtn) return;
+    
+    generateBtn.addEventListener('click', function() {
+        const newPassword = generateRandomPassword();
+        document.getElementById('editPassword').value = newPassword;
+        document.getElementById('editPasswordConfirm').value = newPassword;
+        
+        // Show notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #22c55e;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = 'Password generated: ' + newPassword;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.remove(), 3000);
+    });
+}
+
+// Validate password
+function validatePassword(password) {
+    if (!password) return { valid: true, message: 'No password change' }; // Empty is OK (no change)
+    if (password.length < 6) {
+        return { valid: false, message: 'Password must be at least 6 characters' };
+    }
+    return { valid: true, message: 'Password valid' };
 }
 
 // Save employee changes
@@ -514,6 +570,8 @@ async function saveEmployeeChanges(e) {
     e.preventDefault();
 
     const id = document.getElementById('editEmployeeDbId').value;
+    const password = document.getElementById('editPassword').value.trim();
+    const passwordConfirm = document.getElementById('editPasswordConfirm').value.trim();
     
     const employeeData = {
         first_name: document.getElementById('editFirstName').value.trim(),
@@ -534,6 +592,24 @@ async function saveEmployeeChanges(e) {
     if (!employeeData.first_name || !employeeData.last_name || !employeeData.email) {
         showStatusModal('Error', 'Please fill in all required fields.', 'error');
         return;
+    }
+
+    // Validate password if provided
+    if (password || passwordConfirm) {
+        const validation = validatePassword(password);
+        if (!validation.valid) {
+            showStatusModal('Error', validation.message, 'error');
+            return;
+        }
+        
+        // Check passwords match
+        if (password !== passwordConfirm) {
+            showStatusModal('Error', 'Passwords do not match.', 'error');
+            return;
+        }
+        
+        // Include password in update data
+        employeeData.password = password;
     }
 
     try {
@@ -557,7 +633,10 @@ async function saveEmployeeChanges(e) {
         }
 
         closeModal('editEmployeeModal');
-        showStatusModal('Success', `Employee "${employeeData.first_name} ${employeeData.last_name}" has been updated successfully!`, 'success');
+        const successMsg = password 
+            ? `Employee "${employeeData.first_name} ${employeeData.last_name}" has been updated with new password!`
+            : `Employee "${employeeData.first_name} ${employeeData.last_name}" has been updated successfully!`;
+        showStatusModal('Success', successMsg, 'success');
         loadEmployees();
     } catch (error) {
         console.error('Error updating employee:', error);

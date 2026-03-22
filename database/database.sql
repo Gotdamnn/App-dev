@@ -728,3 +728,47 @@ DROP TRIGGER IF EXISTS trigger_alerts_notification ON alerts;
 CREATE TRIGGER trigger_alerts_notification
 AFTER INSERT OR UPDATE OR DELETE ON alerts
 FOR EACH ROW EXECUTE FUNCTION create_notification();
+
+
+-- ============================================================
+-- MIGRATION: Add password column to employees table
+-- Purpose: Enable employee authentication for mobile app login
+-- Created: 2026-03-22
+-- ============================================================
+
+-- Add password column to employees table if it doesn't exist
+ALTER TABLE employees
+ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT NULL;
+
+-- Create index on email for faster login lookups
+CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(email);
+
+-- Add comment to password column
+COMMENT ON COLUMN employees.password IS 'Bcrypt hashed password for employee login (nullable - requires password reset on first login)';
+
+-- ============================================================
+-- Optional: Set temporary password hash for all employees
+-- Password hash below is for 'TempPassword123!' (you should change this)
+-- Uncomment only if you want to set a temporary password for all existing employees
+-- ============================================================
+-- UPDATE employees SET password = '$2b$10$YJSxNb4nAdryvvwg8YJ9m.4YJSxNb4nAdryvvwg8YJ9m.' WHERE password IS NULL;
+
+-- ============================================================
+-- View for employee authentication
+-- ============================================================
+CREATE OR REPLACE VIEW employee_login_view AS
+SELECT 
+    employee_id,
+    employee_number,
+    first_name,
+    last_name,
+    email,
+    password,
+    job_title,
+    employment_status,
+    department_id,
+    created_at
+FROM employees
+WHERE employment_status = 'Active' AND password IS NOT NULL;
+
+GRANT SELECT ON employee_login_view TO postgres;

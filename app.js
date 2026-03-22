@@ -380,6 +380,112 @@ app.post('/api/auth/logout', async (req, res) => {
     }
 });
 
+// ===== EMPLOYEE LOGIN ENDPOINT (for mobile app) =====
+// Authenticates employee against employees table instead of admins table
+app.post('/api/employees/login', async (req, res) => {
+    const { email, password } = req.body;
+    const clientIp = getClientIp(req);
+    
+    try {
+        // Validate input
+        if (!email || !password) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Email and password are required' 
+            });
+        }
+        
+        // Query employee by email - only active employees
+        const result = await pool.query(
+            `SELECT employee_id, employee_number, first_name, last_name, email, password, 
+                    job_title, employment_status, department_id, created_at 
+             FROM employees 
+             WHERE email = $1 AND employment_status = 'Active'`,
+            [email]
+        );
+        
+        if (result.rows.length === 0) {
+            // Log failed login attempt - employee not found
+            await logAudit('employees', 'LoginFailed', null, null, { 
+                email: email,
+                reason: 'Employee not found or inactive',
+                action: 'Failed employee login attempt'
+            }, email, clientIp, null);
+            
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
+        }
+        
+        const employee = result.rows[0];
+        
+        // Check if password is set
+        if (!employee.password) {
+            await logAudit('employees', 'LoginFailed', employee.employee_id, null, { 
+                email: email,
+                reason: 'Password not set - requires password reset',
+                action: 'Failed employee login attempt'
+            }, email, clientIp, employee.employee_id);
+            
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Password not set. Please use password reset link to set your password.',
+                requiresPasswordReset: true
+            });
+        }
+        
+        // Compare password
+        const validPassword = await bcrypt.compare(password, employee.password);
+        
+        if (!validPassword) {
+            // Log failed login attempt - invalid password
+            await logAudit('employees', 'LoginFailed', employee.employee_id, null, { 
+                email: email,
+                reason: 'Invalid password',
+                action: 'Failed employee login attempt'
+            }, email, clientIp, employee.employee_id);
+            
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
+        }
+        
+        // Log successful login
+        await logAudit('employees', 'Login', employee.employee_id, null, { 
+            email: employee.email,
+            employeeNumber: employee.employee_number,
+            name: `${employee.first_name} ${employee.last_name}`,
+            jobTitle: employee.job_title,
+            loginTime: new Date().toISOString(),
+            action: 'Employee successfully logged in'
+        }, employee.email, clientIp, employee.employee_id);
+        
+        // Return employee data (without password)
+        res.json({ 
+            success: true, 
+            user: {
+                employee_id: employee.employee_id,
+                employee_number: employee.employee_number,
+                firstName: employee.first_name,
+                lastName: employee.last_name,
+                email: employee.email,
+                jobTitle: employee.job_title,
+                departmentId: employee.department_id,
+                employmentStatus: employee.employment_status
+            }
+        });
+        
+    } catch (err) {
+        console.error('Employee login error:', err);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Login failed: ' + err.message 
+        });
+    }
+});
+
 // Resend OTP endpoint
 app.post('/api/auth/resend-otp', async (req, res) => {
     const { email, userName } = req.body;
@@ -1099,35 +1205,74 @@ app.put('/api/employees/:id', async (req, res) => {
     const { 
         first_name, middle_name, last_name, gender, date_of_birth,
         email, phone_number, address,
-        department_id, job_title, employment_type, hire_date, employment_status
+        department_id, job_title, employment_type, hire_date, employment_status,
+        password // New: password field
     } = req.body;
     
     const clientIp = getClientIp(req);
+    const employeeId = req.params.id;
     
     try {
-        const beforeResult = await pool.query('SELECT * FROM employees WHERE employee_id = $1', [req.params.id]);
+        const beforeResult = await pool.query('SELECT * FROM employees WHERE employee_id = $1', [employeeId]);
         const beforeState = beforeResult.rows[0];
         
         // Ensure department_id is an integer or null
         const dept_id = department_id ? parseInt(department_id) : null;
         
-        const result = await pool.query(
-            `UPDATE employees SET 
-                first_name = $1, middle_name = $2, last_name = $3, gender = $4, date_of_birth = $5,
-                email = $6, phone_number = $7, address = $8,
-                department_id = $9, job_title = $10, employment_type = $11, hire_date = $12, employment_status = $13,
-                updated_at = CURRENT_TIMESTAMP 
-            WHERE employee_id = $14 RETURNING *`,
-            [first_name || null, middle_name || null, last_name || null, gender || null, date_of_birth || null,
-             email || null, phone_number || null, address || null,
-             dept_id, job_title || null, employment_type || null, hire_date || null, employment_status || 'Active', req.params.id]
-        );
+        // Handle password if provided
+        let hashedPassword = undefined;
+        if (password && password.trim()) {
+            // Validate password length
+            if (password.length < 6) {
+                return res.status(400).json({ error: 'Password must be at least 6 characters' });
+            }
+            try {
+                hashedPassword = await bcrypt.hash(password, 10);
+            } catch (hashErr) {
+                console.error('Password hashing error:', hashErr);
+                return res.status(500).json({ error: 'Failed to process password' });
+            }
+        }
+        
+        // Build the UPDATE query
+        let updateQuery = `UPDATE employees SET 
+            first_name = $1, middle_name = $2, last_name = $3, gender = $4, date_of_birth = $5,
+            email = $6, phone_number = $7, address = $8,
+            department_id = $9, job_title = $10, employment_type = $11, hire_date = $12, employment_status = $13`;
+        
+        let params = [
+            first_name || null, middle_name || null, last_name || null, gender || null, date_of_birth || null,
+            email || null, phone_number || null, address || null,
+            dept_id, job_title || null, employment_type || null, hire_date || null, employment_status || 'Active'
+        ];
+        
+        // Add password to query if provided
+        if (hashedPassword) {
+            updateQuery += `, password = $${params.length + 1}`;
+            params.push(hashedPassword);
+        }
+        
+        updateQuery += `, updated_at = CURRENT_TIMESTAMP WHERE employee_id = $${params.length + 1} RETURNING *`;
+        params.push(employeeId);
+        
+        const result = await pool.query(updateQuery, params);
+        
         if (result.rows.length > 0) {
-            await logAudit('employees', 'Update', req.params.id, beforeState, result.rows[0], email, clientIp);
+            const updatedEmployee = result.rows[0];
+            
+            // Log the update with password change notification
+            let auditMessage = 'Employee updated';
+            if (hashedPassword) {
+                auditMessage += ' - Password reset';
+            }
+            
+            await logAudit('employees', 'Update', employeeId, beforeState, updatedEmployee, email, clientIp);
+            
             res.json({
                 success: true,
-                message: 'Employee updated successfully',
-                data: result.rows[0]
+                message: hashedPassword ? 'Employee updated successfully with new password' : 'Employee updated successfully',
+                data: updatedEmployee,
+                passwordUpdated: !!hashedPassword
             });
         } else {
             res.status(404).json({ error: 'Employee not found' });

@@ -328,6 +328,30 @@
                     </div>
                 </div>
 
+                <!-- Password Management Section -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-lock"></i> Password Management</h3>
+                    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 4px; margin-bottom: 16px; font-size: 0.9rem; color: #1e40af;">
+                        <strong>Password Settings:</strong> Set or reset the employee's login password below. Leave blank to keep the current password unchanged.
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPassword">New Password</label>
+                            <input type="password" id="editPassword" name="password" placeholder="Leave blank to keep current password" autocomplete="new-password">
+                            <small style="color: #6b7280; margin-top: 4px; display: block;">Minimum 6 characters. Leave blank if you don't want to change the password.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="editPasswordConfirm">Confirm Password</label>
+                            <input type="password" id="editPasswordConfirm" name="password_confirm" placeholder="Repeat password to confirm" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-secondary" id="generatePasswordBtn" style="background: #6366f1; color: white; border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-size: 0.9rem;">
+                            <i class="fas fa-magic"></i> Generate Random Password
+                        </button>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" class="btn-cancel" data-modal="editEmployeeModal">Cancel</button>
                     <button type="submit" class="btn-save">Save Changes</button>
