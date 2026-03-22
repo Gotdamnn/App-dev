@@ -48,8 +48,8 @@ const emailTemplates = {
                         <!-- Verification Code Box -->
                         <div style="background: linear-gradient(135deg, #F0F6FF 0%, #E8F2FF 100%); border: 2px solid #0078D4; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
                             <p style="color: #0078D4; margin: 0 0 12px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Your Verification Code</p>
-                            <p style="margin: 0; font-size: 48px; font-weight: 800; color: #0066CC; letter-spacing: 8px; word-spacing: 12px; font-family: 'Courier New', monospace;">
-                                ${verificationOTP.split('').join(' ')}
+                            <p style="margin: 0; font-size: 52px; font-weight: 800; color: #0066CC; letter-spacing: 4px; font-family: 'Courier New', monospace;">
+                                ${verificationOTP}
                             </p>
                             <p style="color: #6B7280; margin: 15px 0 0 0; font-size: 13px;">Never share this code with anyone</p>
                         </div>
@@ -57,7 +57,7 @@ const emailTemplates = {
                         <!-- Info Box -->
                         <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 16px; border-radius: 8px; margin: 25px 0;">
                             <p style="color: #92400E; margin: 0; font-size: 14px; font-weight: 600;">
-                                ⏱️ Code Expires In: <strong>24 Hours</strong>
+                                ⏱️ Code Expires In: <strong>5 Minutes</strong>
                             </p>
                         </div>
                         
@@ -85,7 +85,7 @@ const emailTemplates = {
                             If you did not initiate this request, please ignore this email.
                         </p>
                         <p style="color: #9CA3AF; margin: 0; font-size: 11px; text-align: center; line-height: 1.5;">
-                            © 2024 PatientPulse. All rights reserved. | Healthcare Management System
+                            © 2026 PatientPulse. All rights reserved. | Healthcare Management System
                         </p>
                     </div>
                 </div>
@@ -100,7 +100,7 @@ Welcome to PatientPulse! Thank you for registering.
 Your Email Verification Code:
 ${verificationOTP}
 
-This code will expire in 24 hours.
+This code will expire in 5 minutes.
 
 Enter this code in the PatientPulse app to complete your email verification.
 
