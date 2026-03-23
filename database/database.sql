@@ -44,6 +44,25 @@ CREATE TABLE IF NOT EXISTS devices (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Device Vitals/Readings table for temperature and other sensor data
+CREATE TABLE IF NOT EXISTS device_vitals (
+    id SERIAL PRIMARY KEY,
+    device_id INTEGER REFERENCES devices(id) ON DELETE CASCADE NOT NULL,
+    patient_id INTEGER REFERENCES patients(id) ON DELETE SET NULL,
+    body_temperature DECIMAL(5, 2) NOT NULL,
+    temperature_status VARCHAR(50) CHECK (temperature_status IN ('Low', 'Normal', 'Warning', 'Fever')) DEFAULT 'Normal',
+    connection_status VARCHAR(50) CHECK (connection_status IN ('online', 'offline', 'warning')) DEFAULT 'online',
+    signal_strength INTEGER CHECK (signal_strength >= 0 AND signal_strength <= 100),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT check_temperature CHECK (body_temperature >= 35.0 AND body_temperature <= 42.0)
+);
+
+-- Create index for faster queries on device_id and recorded_at
+CREATE INDEX IF NOT EXISTS idx_device_vitals_device_id ON device_vitals(device_id);
+CREATE INDEX IF NOT EXISTS idx_device_vitals_patient_id ON device_vitals(patient_id);
+CREATE INDEX IF NOT EXISTS idx_device_vitals_recorded_at ON device_vitals(recorded_at);
+
 CREATE TABLE IF NOT EXISTS alerts (
     id SERIAL PRIMARY KEY,
     patient_id INTEGER REFERENCES patients(id) ON DELETE SET NULL,

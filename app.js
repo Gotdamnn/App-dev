@@ -2136,26 +2136,52 @@ app.get('/api/patients/:id/temperature/latest', async (req, res) => {
 // Get temperature history for a patient (for View History modal)
 app.get('/api/patients/:id/temperature-history', async (req, res) => {
     const patientId = req.params.id;
-    const limit = req.query.limit || 50; // Get last 50 records by default
+    const limit = parseInt(req.query.limit) || 50; // Get last 50 records by default
+    const hours = parseInt(req.query.hours) || 720; // Default to 30 days (720 hours)
     
     try {
         // Validate patient exists
-        const patientCheck = await pool.query('SELECT id FROM patients WHERE id = $1', [patientId]);
+        const patientCheck = await pool.query('SELECT id, name, body_temperature FROM patients WHERE id = $1', [patientId]);
         if (patientCheck.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Patient not found' });
         }
         
-        // Get temperature history
+        const patient = patientCheck.rows[0];
+        
+        // Get temperature history from device_vitals table
         const result = await pool.query(
-            `SELECT id, patient_id, temperature as body_temperature, temperature_status, recorded_at, notes, recorded_by 
-            FROM temperature_history 
+            `SELECT 
+                id,
+                device_id,
+                patient_id,
+                body_temperature,
+                temperature_status,
+                connection_status,
+                signal_strength,
+                recorded_at,
+                created_at
+            FROM device_vitals 
             WHERE patient_id = $1 
+            AND recorded_at >= NOW() - INTERVAL '${hours} hours'
             ORDER BY recorded_at DESC 
             LIMIT $2`,
             [patientId, limit]
         );
         
-        res.json(result.rows);
+        res.json({
+            success: true,
+            patient: {
+                id: patient.id,
+                name: patient.name,
+                current_temperature: patient.body_temperature
+            },
+            total_readings: result.rows.length,
+            readings: result.rows,
+            query_params: {
+                limit: limit,
+                hours: hours
+            }
+        });
     } catch (err) {
         console.error('Error fetching temperature history:', err.message);
         res.status(500).json({ success: false, error: err.message });
@@ -2450,6 +2476,215 @@ app.post('/api/devices/:id/heartbeat', async (req, res) => {
         res.json({ success: true, message: 'Heartbeat received', status: 'online' });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ===== ESP32 TEMPERATURE & VITAL DATA API =====
+// ESP32 sends temperature reading and connection status
+app.post('/api/devices/:id/vitals', async (req, res) => {
+    const deviceId = req.params.id;
+    const { body_temperature, temperature_status, connection_status, signal_strength, patient_id } = req.body;
+    
+    try {
+        // Validate device exists
+        const deviceResult = await pool.query('SELECT * FROM devices WHERE id = $1', [deviceId]);
+        if (deviceResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Device not found' });
+        }
+        
+        const device = deviceResult.rows[0];
+        
+        // Validate temperature
+        if (!body_temperature || isNaN(body_temperature)) {
+            return res.status(400).json({ success: false, error: 'Valid body_temperature (number) is required' });
+        }
+        
+        const temp = parseFloat(body_temperature);
+        if (temp < 35.0 || temp > 42.0) {
+            return res.status(400).json({ success: false, error: 'Temperature must be between 35.0 and 42.0°C' });
+        }
+        
+        // Classify temperature if not provided
+        let tempStatus = temperature_status || classifyTemperature(temp);
+        
+        // Determine device connection status (defaults to 'online' if not provided)
+        const deviceStatus = connection_status && connection_status === 'offline' ? 'offline' : 'online';
+        const devSignalStrength = signal_strength || 100; // Default to 100 if not provided
+        
+        // Store the vital reading
+        const vitalResult = await pool.query(
+            `INSERT INTO device_vitals 
+             (device_id, patient_id, body_temperature, temperature_status, connection_status, signal_strength, recorded_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) 
+             RETURNING *`,
+            [deviceId, patient_id || null, temp, tempStatus, deviceStatus, devSignalStrength]
+        );
+        
+        // Update patient's body temperature if patient_id provided
+        if (patient_id) {
+            try {
+                await pool.query(
+                    `UPDATE patients SET 
+                        body_temperature = $1,
+                        updated_at = CURRENT_TIMESTAMP
+                     WHERE id = $2`,
+                    [temp, patient_id]
+                );
+                console.log(`✅ Updated patient ${patient_id} temperature: ${temp}°C`);
+            } catch (err) {
+                console.error(`⚠️ Warning: Could not update patient temperature:`, err.message);
+                // Don't fail the request if patient update fails
+            }
+        }
+        
+        // Update device status and last_data_time
+        await pool.query(
+            `UPDATE devices SET 
+                status = $1, 
+                signal_strength = $2,
+                last_data_time = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP 
+             WHERE id = $3`,
+            [deviceStatus, devSignalStrength, deviceId]
+        );
+        
+        // If device was offline, resolve offline alert
+        if (device.status === 'offline' && deviceStatus === 'online') {
+            await pool.query(
+                `UPDATE alerts SET status = 'resolved', updated_at = CURRENT_TIMESTAMP 
+                WHERE category = 'device' AND source = 'Device Manager' 
+                AND description LIKE $1 AND status = 'active'`,
+                [`%${device.device_id}%offline%`]
+            );
+            console.log(`✅ Device ${device.device_id} back online`);
+        }
+        
+        // Create temperature alert if abnormal
+        if (tempStatus === 'Warning' || tempStatus === 'Fever') {
+            const severity = tempStatus === 'Fever' ? 'critical' : 'warning';
+            await createAlert({
+                patient_id: patient_id || null,
+                title: `${tempStatus} Body Temperature Detected`,
+                description: `Device ${device.name} (${device.device_id}) recorded body temperature: ${temp}°C${patient_id ? ' for patient' : ''}. Status: ${tempStatus}`,
+                alert_type: 'Temperature Alert',
+                category: 'device',
+                severity: severity,
+                values: `${temp}°C`,
+                normal_range: '36.5-37.5°C',
+                source: 'Temperature Sensor'
+            });
+        }
+        
+        // Check signal strength and create warning if low
+        if (devSignalStrength && devSignalStrength < 30) {
+            await createAlert({
+                patient_id: null,
+                title: 'Low Device Signal Strength',
+                description: `Device ${device.name} (${device.device_id}) has weak signal strength: ${devSignalStrength}%. Check device placement or connectivity.`,
+                alert_type: 'Signal Warning',
+                category: 'device',
+                severity: devSignalStrength < 15 ? 'critical' : 'warning',
+                values: `${devSignalStrength}%`,
+                normal_range: '50-100%',
+                source: 'Device Manager'
+            });
+        }
+        
+        res.status(201).json({
+            success: true,
+            message: 'Vital data received successfully',
+            data: vitalResult.rows[0],
+            device_status: deviceStatus,
+            device_signal: devSignalStrength
+        });
+    } catch (err) {
+        console.error('❌ Error storing vital data:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// GET device vitals/readings (latest, with optional limit)
+app.get('/api/devices/:id/vitals', async (req, res) => {
+    const deviceId = req.params.id;
+    const limit = parseInt(req.query.limit) || 10;
+    const hours = parseInt(req.query.hours) || 24;
+    
+    try {
+        // Validate device exists
+        const deviceResult = await pool.query('SELECT * FROM devices WHERE id = $1', [deviceId]);
+        if (deviceResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Device not found' });
+        }
+        
+        // Get recent vitals
+        const vitalsResult = await pool.query(
+            `SELECT * FROM device_vitals 
+             WHERE device_id = $1 
+             AND recorded_at >= NOW() - INTERVAL '${hours} hours'
+             ORDER BY recorded_at DESC 
+             LIMIT $2`,
+            [deviceId, limit]
+        );
+        
+        res.json({
+            success: true,
+            device_id: deviceId,
+            total_count: vitalsResult.rows.length,
+            vitals: vitalsResult.rows,
+            query_params: { limit, hours }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// GET device current status (online/offline + latest temperature)
+app.get('/api/devices/:id/status', async (req, res) => {
+    const deviceId = req.params.id;
+    
+    try {
+        // Get device info
+        const deviceResult = await pool.query('SELECT * FROM devices WHERE id = $1', [deviceId]);
+        if (deviceResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Device not found' });
+        }
+        
+        const device = deviceResult.rows[0];
+        
+        // Get latest vital reading
+        const latestVitalResult = await pool.query(
+            `SELECT * FROM device_vitals 
+             WHERE device_id = $1 
+             ORDER BY recorded_at DESC 
+             LIMIT 1`,
+            [deviceId]
+        );
+        
+        const latestVital = latestVitalResult.rows[0] || null;
+        
+        res.json({
+            success: true,
+            device: {
+                id: device.id,
+                name: device.name,
+                device_id: device.device_id,
+                board_type: device.board_type,
+                location: device.location,
+                status: device.status,
+                signal_strength: device.signal_strength,
+                last_data_time: device.last_data_time
+            },
+            latest_vital: latestVital ? {
+                body_temperature: latestVital.body_temperature,
+                temperature_status: latestVital.temperature_status,
+                connection_status: latestVital.connection_status,
+                signal_strength: latestVital.signal_strength,
+                recorded_at: latestVital.recorded_at
+            } : null,
+            is_online: device.status === 'online'
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
