@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Reports - PatientPulse</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/employee-reports.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/sidebar', { activePage: 'employee-reports' }) %>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Employee Reports</h1>
+                <div class="report-count" id="reportCount">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Statistics Section removed -->
+
+        <div class="report-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search by employee name, department...">
+            </div>
+            <div class="filters">
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Under Review">Under Review</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                </select>
+                <select class="filter-select" id="severityFilter">
+                    <option value="">All Severity</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                </select>
+                <select class="filter-select" id="reportTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="Complaint">Complaint</option>
+                    <option value="Incident">Incident</option>
+                    <option value="Disciplinary">Disciplinary</option>
+                    <option value="Performance">Performance</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>Report ID</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Reported By</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reportsTableBody">
+                    <!-- Report data will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" style="text-align: center; margin-top: 20px;">
+            <!-- Pagination will be loaded dynamically -->
+        </div>
+    </div>
+
+    <!-- Report Details Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Report Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailsModalBody">
+                    Loading...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="closeBtn" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="editDetailsBtn">Edit</button>
+                    <button type="button" class="btn btn-success" id="resolveBtn">Mark as Resolved</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reportModalTitle">New Employee Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reportForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="employeeSelect" class="form-label">Employee</label>
+                                <select class="form-control" id="employeeSelect">
+                                    <option>Select Employee...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="departmentSelect" class="form-label">Department</label>
+                                <select class="form-control" id="departmentSelect">
+                                    <option>Select Department...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="reportTypeSelect" class="form-label">Report Type</label>
+                                <select class="form-control" id="reportTypeSelect">
+                                    <option>Complaint</option>
+                                    <option>Incident</option>
+                                    <option>Disciplinary</option>
+                                    <option>Performance</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="severitySelect" class="form-label">Severity</label>
+                                <select class="form-control" id="severitySelect">
+                                    <option>Low</option>
+                                    <option>Medium</option>
+                                    <option>High</option>
+                                    <option>Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reportTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="reportTitle">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reportDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="reportDescription" rows="4"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitReportBtn">Submit Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/employee-reports.js"></script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "patient-pulse-backend",
   "version": "1.0.0",
   "description": "PatientPulse Backend API - Healthcare temperature monitoring system",
@@ -36,5 +37,23 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.0.2"
+=======
+  "name": "patientpulse-backend",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "set NODE_ENV=development && node app.js",
+    "test": "echo \"No tests specified\""
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "ejs": "^4.0.1",
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.7",
+    "pg": "^8.11.0"
+>>>>>>> 1c1ef890d38fe585abb159dd412074cbc2bf2afe
   }
 }

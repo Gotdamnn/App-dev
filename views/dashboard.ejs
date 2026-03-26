@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatientPulse Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/sidebar', { activePage: 'dashboard' }) %>
+
+    <div class="main">
+        <!-- Top Navbar with Global Search -->
+        <div class="top-navbar">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="globalSearch" class="global-search" placeholder="Search patients, employees, departments, reports...">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+            <div class="navbar-actions">
+                <button id="refreshBtn" class="refresh-btn">🔄 Refresh</button>
+                <div class="notification-container">
+                    <div class="notification-bell" id="notificationBell">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notificationBadge">0</span>
+                    </div>
+                    <!-- Notification Dropdown Panel -->
+                    <div class="notification-panel" id="notificationPanel">
+                        <div class="notification-panel-header">
+                            <h3>Notifications</h3>
+                            <button class="notification-close" onclick="closeNotificationPanel()">×</button>
+                        </div>
+                        <div class="notification-panel-tabs">
+                            <button class="tab-btn active" onclick="filterNotifications('all')">All</button>
+                            <button class="tab-btn" onclick="filterNotifications('created')">Created</button>
+                            <button class="tab-btn" onclick="filterNotifications('updated')">Updated</button>
+                            <button class="tab-btn" onclick="filterNotifications('deleted')">Deleted</button>
+                            <button class="tab-btn" onclick="filterNotifications('auth')">Auth</button>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <div class="notification-empty">
+                                <i class="fas fa-inbox"></i>
+                                <p>No notifications yet</p>
+                            </div>
+                        </div>
+                        <div class="notification-panel-footer">
+                            <button class="clear-all-btn" onclick="clearAllNotifications()">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-profile">
+                    <div class="admin-avatar">AD</div>
+                    <div class="admin-info">
+                        <span class="admin-name">Admin User</span>
+                        <span class="admin-role">Administrator</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-header">
+            <div>
+                <h1>Dashboard Overview</h1>
+                <div class="last-updated">Last updated: <span id="lastUpdateTime">--</span></div>
+            </div>
+        </div>
+
+        <!-- Summary Cards - Top Row -->
+        <div class="stats-cards">
+            <div class="stats-card patients">
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="card-content">
+                    <div class="stat-title">Total Patients</div>
+                    <div class="stat-value" id="totalPatients">--</div>
+                    <div class="stat-desc"><span id="activePatients">0</span> active patients</div>
+                </div>
+            </div>
+            <div class="stats-card employees">
+                <div class="card-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="card-content">
+                    <div class="stat-title">Total Employees</div>
+                    <div class="stat-value" id="totalEmployees">--</div>
+                    <div class="stat-desc"><span id="activeEmployees">0</span> active employees</div>
+                </div>
+            </div>
+            <div class="stats-card departments">
+                <div class="card-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="card-content">
+                    <div class="stat-title">Total Departments</div>
+                    <div class="stat-value" id="totalDepartments">--</div>
+                    <div class="stat-desc"><span id="activeDepartments">0</span> active departments</div>
+                </div>
+            </div>
+            <div class="stats-card devices-overview">
+                <div class="card-icon">
+                    <i class="fas fa-laptop-medical"></i>
+                </div>
+                <div class="card-content">
+                    <div class="stat-title">Devices Overview</div>
+                    <div class="stat-value" id="totalDevices">--</div>
+                    <div class="devices-status">
+                        <div class="device-status online">
+                            <span class="status-dot online-dot"></span>
+                            <span>Online: <strong id="onlineDevices">0</strong></span>
+                        </div>
+                        <div class="device-status offline">
+                            <span class="status-dot offline-dot"></span>
+                            <span>Offline: <strong id="offlineDevices">0</strong></span>
+                        </div>
+                    </div>
+                    <div class="stat-desc">Last sync: <span id="lastSyncTime">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Recent Activity Row -->
+        <div class="actions-activity-container">
+            <!-- Quick Actions Section -->
+            <div class="quick-actions">
+                <div class="quick-actions-header">
+                    <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+                </div>
+                <div class="quick-actions-grid">
+                    <a href="/patients?action=add" class="quick-action-btn">
+                        <div class="action-icon patients-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <span>Add Patient</span>
+                    </a>
+                    <a href="/employees?action=add" class="quick-action-btn">
+                        <div class="action-icon employees-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <span>Add Employee</span>
+                    </a>
+                    <a href="/departments?action=add" class="quick-action-btn">
+                        <div class="action-icon departments-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <span>Add Department</span>
+                    </a>
+                    <a href="/devices?action=add" class="quick-action-btn">
+                        <div class="action-icon devices-icon">
+                            <i class="fas fa-laptop-medical"></i>
+                        </div>
+                        <span>Register Device</span>
+                    </a>
+                    <a href="/staff-management" class="quick-action-btn">
+                        <div class="action-icon staff-icon">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <span>Staff Management</span>
+                    </a>
+                    <a href="/audit-logs" class="quick-action-btn">
+                        <div class="action-icon audit-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <span>Audit Logs</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Activity Section -->
+            <div class="recent-activity">
+                <div class="recent-activity-header">
+                    <h2><i class="fas fa-history"></i> Recent Activity</h2>
+                    <div class="auto-refresh-indicator">
+                        <span class="pulse-dot"></span>
+                        <span>Auto-refresh</span>
+                    </div>
+                </div>
+                <ul class="activity-list" id="activityList">
+                    <li class="loading-activity">
+                        <span class="activity-dot dot-blue"></span>
+                        <div class="activity-details">
+                            <div class="activity-title">Loading...</div>
+                            <div class="activity-meta">Fetching recent activity</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- System Status Bar -->
+        <div class="system-status-bar">
+            <div class="status-item">
+                <i class="fas fa-server"></i>
+                <span>Server: <strong id="serverStatus">Online</strong></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-database"></i>
+                <span>Database: <strong id="dbStatus">Connected</strong></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-clock"></i>
+                <span>Uptime: <strong id="uptime">--</strong></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Critical Alerts: <strong id="criticalAlerts">0</strong></span>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Logout</h2>
+                <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button type="button" class="btn-delete" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Modal - DISABLED -->
+    <!-- 
+    <div class="modal" id="notificationsModal">
+        <div class="modal-content notifications-panel">
+            <div class="notifications-header">
+                <h3>Your Notifications</h3>
+                <button class="modal-close" onclick="closeNotificationsModal()">&times;</button>
+            </div>
+            
+            <div class="notifications-tabs">
+                <button class="notification-tab-btn active" onclick="filterNotifications('all')">View All <span id="allCount">0</span></button>
+                <button class="notification-tab-btn" onclick="filterNotifications('critical')">Critical <span id="criticalCount">0</span></button>
+                <button class="notification-tab-btn" onclick="filterNotifications('warning')">Warnings <span id="warningCount">0</span></button>
+            </div>
+            
+            <div class="notifications-list" id="notificationsBody">
+                <p style="text-align: center; color: #9ca3af; padding: 40px 20px;">No notifications</p>
+            </div>
+            
+            <div class="notifications-footer">
+                <button type="button" class="btn-text" onclick="clearNotifications()">Clear All</button>
+                <button type="button" class="btn-close" onclick="closeNotificationsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    -->
+
+</body>
+</html>

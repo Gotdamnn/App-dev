@@ -1,0 +1,41 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+*.log
+
+# Build outputs
+dist/
+build/
+
+# Database
+*.sql.bak
+*.sql.backup
+
+# Azure
+.deployment
+publish/
+PublishProfile/
+
+# Temporary files
+temp/
+tmp/
+*.tmp

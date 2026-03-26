@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Management - PatientPulse</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/departments.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/sidebar', { activePage: 'departments' }) %>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Department Management</h1>
+                <div class="department-count" id="departmentCount">Loading...</div>
+            </div>
+            <button class="add-department-btn"><i class="fas fa-plus"></i> Add Department</button>
+        </div>
+
+        <!-- Department Stats Summary -->
+        <div class="department-stats-summary">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-building"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalDepartments">0</span>
+                    <span class="stat-label">Total Departments</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="activeDepartments">0</span>
+                    <span class="stat-label">Active</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon employees"><i class="fas fa-users"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalEmployeesInDepts">0</span>
+                    <span class="stat-label">Total Employees</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon budget"><i class="fas fa-peso-sign"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalBudget">₱0</span>
+                    <span class="stat-label">Total Budget</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="department-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search departments...">
+            </div>
+            <div class="filter-controls">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Archived">Archived</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Department Cards Grid -->
+        <div class="departments-grid" id="departmentsGrid">
+            <!-- Department cards will be loaded dynamically -->
+        </div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/departments.js"></script>
+
+    <!-- Add Department Modal -->
+    <div id="addDepartmentModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Add New Department</h2>
+                <button class="modal-close" data-modal="addDepartmentModal">&times;</button>
+            </div>
+            <form id="addDepartmentForm">
+                <!-- Basic Info Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-info-circle"></i> Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addDepartmentName">Department Name *</label>
+                            <input type="text" id="addDepartmentName" name="department_name" placeholder="Enter department name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addStatus">Status</label>
+                            <select id="addStatus" name="status">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Archived">Archived</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addParentDepartment">Parent Department</label>
+                            <select id="addParentDepartment" name="parent_department_id">
+                                <option value="">None (Top-level)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="addDepartmentHead">Department Head</label>
+                            <select id="addDepartmentHead" name="department_head_id">
+                                <option value="">Select Head</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="addDepartmentDescription">Description</label>
+                        <textarea id="addDepartmentDescription" name="description" placeholder="Enter department description" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <!-- Location Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-map-marker-alt"></i> Location</h3>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="addLocationBuilding">Building</label>
+                            <input type="text" id="addLocationBuilding" name="location_building" placeholder="e.g., Main Building">
+                        </div>
+                        <div class="form-group">
+                            <label for="addLocationFloor">Floor</label>
+                            <input type="text" id="addLocationFloor" name="location_floor" placeholder="e.g., 2nd Floor">
+                        </div>
+                        <div class="form-group">
+                            <label for="addLocationRoom">Room</label>
+                            <input type="text" id="addLocationRoom" name="location_room" placeholder="e.g., Room 201">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addContactEmail">Department Email</label>
+                            <input type="email" id="addContactEmail" name="contact_email" placeholder="department@hospital.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="addContactPhone">Department Phone</label>
+                            <input type="tel" id="addContactPhone" name="contact_phone" placeholder="+1 (123) 456-7890">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operating Hours Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-clock"></i> Operating Hours</h3>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="addOperatingStart">Start Time</label>
+                            <input type="time" id="addOperatingStart" name="operating_hours_start">
+                        </div>
+                        <div class="form-group">
+                            <label for="addOperatingEnd">End Time</label>
+                            <input type="time" id="addOperatingEnd" name="operating_hours_end">
+                        </div>
+                        <div class="form-group">
+                            <label for="addOperatingDays">Operating Days</label>
+                            <input type="text" id="addOperatingDays" name="operating_days" placeholder="Mon-Fri" value="Mon-Fri">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-peso-sign"></i> Budget & Finance</h3>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="addBudgetAnnual">Annual Budget (₱)</label>
+                            <input type="number" id="addBudgetAnnual" name="budget_annual" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="addBudgetSpent">Budget Spent (₱)</label>
+                            <input type="number" id="addBudgetSpent" name="budget_spent" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="addCostCenterCode">Cost Center Code</label>
+                            <input type="text" id="addCostCenterCode" name="cost_center_code" placeholder="e.g., CC-001">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" data-modal="addDepartmentModal">Cancel</button>
+                    <button type="submit" class="btn-save">Add Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Department Modal -->
+    <div id="editDepartmentModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Edit Department</h2>
+                <button class="modal-close" data-modal="editDepartmentModal">&times;</button>
+            </div>
+            <form id="editDepartmentForm">
+                <input type="hidden" id="editDepartmentId">
+                
+                <!-- Basic Info Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-info-circle"></i> Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editDepartmentName">Department Name *</label>
+                            <input type="text" id="editDepartmentName" name="department_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStatus">Status</label>
+                            <select id="editStatus" name="status">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Archived">Archived</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editParentDepartment">Parent Department</label>
+                            <select id="editParentDepartment" name="parent_department_id">
+                                <option value="">None (Top-level)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDepartmentHead">Department Head</label>
+                            <select id="editDepartmentHead" name="department_head_id">
+                                <option value="">Select Head</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="editDepartmentDescription">Description</label>
+                        <textarea id="editDepartmentDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <!-- Location Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-map-marker-alt"></i> Location</h3>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="editLocationBuilding">Building</label>
+                            <input type="text" id="editLocationBuilding" name="location_building">
+                        </div>
+                        <div class="form-group">
+                            <label for="editLocationFloor">Floor</label>
+                            <input type="text" id="editLocationFloor" name="location_floor">
+                        </div>
+                        <div class="form-group">
+                            <label for="editLocationRoom">Room</label>
+                            <input type="text" id="editLocationRoom" name="location_room">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editContactEmail">Department Email</label>
+                            <input type="email" id="editContactEmail" name="contact_email">
+                        </div>
+                        <div class="form-group">
+                            <label for="editContactPhone">Department Phone</label>
+                            <input type="tel" id="editContactPhone" name="contact_phone">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operating Hours Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-clock"></i> Operating Hours</h3>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="editOperatingStart">Start Time</label>
+                            <input type="time" id="editOperatingStart" name="operating_hours_start">
+                        </div>
+                        <div class="form-group">
+                            <label for="editOperatingEnd">End Time</label>
+                            <input type="time" id="editOperatingEnd" name="operating_hours_end">
+                        </div>
+                        <div class="form-group">
+                            <label for="editOperatingDays">Operating Days</label>
+                            <input type="text" id="editOperatingDays" name="operating_days">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Section -->
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="fas fa-peso-sign"></i> Budget & Finance</h3>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="editBudgetAnnual">Annual Budget (₱)</label>
+                            <input type="number" id="editBudgetAnnual" name="budget_annual" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="editBudgetSpent">Budget Spent (₱)</label>
+                            <input type="number" id="editBudgetSpent" name="budget_spent" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCostCenterCode">Cost Center Code</label>
+                            <input type="text" id="editCostCenterCode" name="cost_center_code">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" data-modal="editDepartmentModal">Cancel</button>
+                    <button type="submit" class="btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Department Modal -->
+    <div id="viewDepartmentModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Department Details</h2>
+                <button class="modal-close" onclick="closeViewDepartmentModal()">&times;</button>
+            </div>
+            <div class="view-department-content">
+                <!-- Header with icon and name -->
+                <div class="view-header">
+                    <div class="view-icon" id="viewDepartmentIcon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="view-header-info">
+                        <h3 id="viewDepartmentName">Department Name</h3>
+                        <span class="status-badge" id="viewDepartmentStatus">Active</span>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="view-tabs">
+                    <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+                    <button class="tab-btn" onclick="showTab('location')">Location</button>
+                    <button class="tab-btn" onclick="showTab('budget')">Budget</button>
+                    <button class="tab-btn" onclick="showTab('employees')">Employees</button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div id="tab-overview" class="tab-content active">
+                    <div class="view-grid">
+                        <div class="view-item">
+                            <span class="view-label">Department ID</span>
+                            <span class="view-value" id="viewDepartmentId">-</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Parent Department</span>
+                            <span class="view-value" id="viewParentDepartment">None</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Department Head</span>
+                            <span class="view-value" id="viewDepartmentHead">Not Assigned</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Employee Count</span>
+                            <span class="view-value" id="viewEmployeeCount">0</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Contact Email</span>
+                            <span class="view-value" id="viewContactEmail">-</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Contact Phone</span>
+                            <span class="view-value" id="viewContactPhone">-</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Operating Hours</span>
+                            <span class="view-value" id="viewOperatingHours">-</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Operating Days</span>
+                            <span class="view-value" id="viewOperatingDays">-</span>
+                        </div>
+                        <div class="view-item full-width">
+                            <span class="view-label">Description</span>
+                            <span class="view-value" id="viewDepartmentDescription">No description</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Created At</span>
+                            <span class="view-value" id="viewCreatedAt">-</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Last Updated</span>
+                            <span class="view-value" id="viewUpdatedAt">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Tab -->
+                <div id="tab-location" class="tab-content">
+                    <div class="view-grid">
+                        <div class="view-item">
+                            <span class="view-label">Building</span>
+                            <span class="view-value" id="viewLocationBuilding">-</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Floor</span>
+                            <span class="view-value" id="viewLocationFloor">-</span>
+                        </div>
+                        <div class="view-item">
+                            <span class="view-label">Room</span>
+                            <span class="view-value" id="viewLocationRoom">-</span>
+                        </div>
+                    </div>
+                    <div class="location-map-placeholder">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <p>Location Map Preview</p>
+                    </div>
+                </div>
+
+                <!-- Budget Tab -->
+                <div id="tab-budget" class="tab-content">
+                    <div class="budget-overview">
+                        <div class="budget-card">
+                            <span class="budget-label">Annual Budget</span>
+                            <span class="budget-value" id="viewBudgetAnnual">₱0.00</span>
+                        </div>
+                        <div class="budget-card spent">
+                            <span class="budget-label">Budget Spent</span>
+                            <span class="budget-value" id="viewBudgetSpent">₱0.00</span>
+                        </div>
+                        <div class="budget-card remaining">
+                            <span class="budget-label">Remaining</span>
+                            <span class="budget-value" id="viewBudgetRemaining">₱0.00</span>
+                        </div>
+                    </div>
+                    <div class="budget-progress-section">
+                        <div class="budget-progress-label">
+                            <span>Budget Utilization</span>
+                            <span id="viewBudgetPercent">0%</span>
+                        </div>
+                        <div class="budget-progress-bar">
+                            <div class="budget-progress-fill" id="viewBudgetProgressFill"></div>
+                        </div>
+                    </div>
+                    <div class="view-item">
+                        <span class="view-label">Cost Center Code</span>
+                        <span class="view-value" id="viewCostCenterCode">-</span>
+                    </div>
+                </div>
+
+                <!-- Employees Tab -->
+                <div id="tab-employees" class="tab-content">
+                    <div class="employees-list" id="viewEmployeesList">
+                        <p class="loading-employees">Loading employees...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-save" onclick="closeViewDepartmentModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 id="statusTitle">Success</h2>
+                <button class="modal-close" data-modal="statusModal">&times;</button>
+            </div>
+            <div id="statusMessage" style="padding: 20px; text-align: center; font-size: 1rem; color: #374151;">
+                Operation completed successfully
+            </div>
+            <div class="form-actions" style="padding: 0 20px 20px 20px;">
+                <button type="button" class="btn-save" onclick="closeStatusModal()" style="width: 100%;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 id="confirmTitle" style="color: #ef4444;">Confirm Delete</h2>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div id="confirmMessage" style="padding: 20px; text-align: center; font-size: 1rem; color: #374151;">
+                Are you sure you want to delete this department?
+            </div>
+            <div class="form-actions" style="padding: 0 20px 20px 20px; display: flex; gap: 12px;">
+                <button type="button" class="btn-cancel" onclick="closeConfirmModal()" style="flex: 1;">Cancel</button>
+                <button type="button" class="btn-delete" onclick="confirmDelete()" style="flex: 1; background: #ef4444; color: white; border: none; border-radius: 8px; padding: 12px; cursor: pointer;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Logout</h2>
+                <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button type="button" class="btn-delete" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content.confirm-modal { background: white; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; z-index: 1001; }
+        .confirm-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; }
+        .confirm-modal .modal-header h2 { margin: 0; font-size: 18px; color: #333; }
+        .confirm-modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+        .confirm-modal .modal-close:hover { color: #333; }
+        .confirm-modal .modal-body { padding: 30px; text-align: center; }
+        .confirm-modal .modal-body p { color: #666; margin: 0; }
+        .status-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
+        .status-icon.warning { background: #fef3c7; color: #f59e0b; }
+        .confirm-modal .form-actions { display: flex; gap: 12px; padding: 20px; border-top: 1px solid #eee; justify-content: flex-end; }
+        .confirm-modal .btn-cancel { padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .confirm-modal .btn-cancel:hover { background: #f5f5f5; }
+        .confirm-modal .btn-delete { padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .confirm-modal .btn-delete:hover { background: #dc2626; }
+    </style>
+</body>
+</html>

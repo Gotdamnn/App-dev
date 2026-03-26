@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Monitoring - PatientPulse</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/devices.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/sidebar', { activePage: 'devices' }) %>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <h1>Arduino Scanner Devices</h1>
+            </div>
+            <div class="header-actions">
+                <div class="status-dots">
+                    <span class="dot online"></span>
+                    <span class="dot warning"></span>
+                    <span class="dot offline"></span>
+                </div>
+                <button class="add-device-btn"><i class="fas fa-plus"></i> Add Device</button>
+            </div>
+        </div>
+
+        <div class="device-stats">
+            <div class="device-stat-card online">
+                <div class="stat-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Connected Devices</div>
+                    <div class="stat-subtitle">Arduino boards online</div>
+                </div>
+                <div class="stat-badge">+3</div>
+            </div>
+
+            <div class="device-stat-card offline">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Disconnected Devices</div>
+                    <div class="stat-subtitle">Requires attention</div>
+                </div>
+                <div class="stat-badge">-1</div>
+            </div>
+        </div>
+
+        <div class="devices-container">
+            <!-- Online Devices Section -->
+            <div class="devices-section online-section">
+                <h2><i class="fas fa-check-circle" style="color: #22c55e; margin-right: 8px;"></i>Online Devices</h2>
+                <div class="devices-grid" id="onlineDevicesGrid">
+                    <!-- Online device cards will be loaded dynamically from database -->
+                </div>
+            </div>
+
+            <!-- Offline Devices Section -->
+            <div class="devices-section offline-section">
+                <h2><i class="fas fa-exclamation-circle" style="color: #ef4444; margin-right: 8px;"></i>Offline Devices</h2>
+                <div class="devices-grid" id="offlineDevicesGrid">
+                    <!-- Offline device cards will be loaded dynamically from database -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/devices.js"></script>
+
+    <!-- Edit Device Modal -->
+    <div id="editDeviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Device</h2>
+                <button class="modal-close" data-modal="editDeviceModal">&times;</button>
+            </div>
+            <form id="editDeviceForm">
+                <input type="hidden" id="editDbId" name="dbId">
+                <div class="form-group">
+                    <label for="deviceName">Device Name</label>
+                    <input type="text" id="deviceName" name="deviceName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceId">Device ID</label>
+                    <input type="text" id="deviceId" name="deviceId" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="boardType">Board Type</label>
+                    <select id="boardType" name="boardType" required>
+                        <option value="">Select Board Type</option>
+                        <option value="Arduino Uno">Arduino Uno</option>
+                        <option value="Arduino Mega">Arduino Mega</option>
+                        <option value="Arduino Nano">Arduino Nano</option>
+                        <option value="Arduino MKR WiFi">Arduino MKR WiFi</option>
+                        <option value="NodeMCU">NodeMCU</option>
+                        <option value="ESP32">ESP32</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceLocation">Location</label>
+                    <input type="text" id="deviceLocation" name="deviceLocation" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signalStrength">Signal Strength (%)</label>
+                    <input type="number" id="signalStrength" name="signalStrength" min="0" max="100" value="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceStatus">Status</label>
+                    <select id="deviceStatus" name="deviceStatus" required>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="warning">Warning</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-delete" onclick="showDeleteConfirmModal()">Delete Device</button>
+                    <div>
+                        <button type="button" class="btn-cancel" data-modal="editDeviceModal">Cancel</button>
+                        <button type="submit" class="btn-save">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div id="addDeviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Device</h2>
+                <button class="modal-close" data-modal="addDeviceModal">&times;</button>
+            </div>
+            <form id="addDeviceForm">
+                <div class="form-group">
+                    <label for="addDeviceName">Device Name *</label>
+                    <input type="text" id="addDeviceName" name="deviceName" placeholder="e.g., RFID Scanner" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addDeviceId">Device ID *</label>
+                    <input type="text" id="addDeviceId" name="deviceId" placeholder="e.g., ARD-001" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addDeviceLocation">Location *</label>
+                    <input type="text" id="addDeviceLocation" name="deviceLocation" placeholder="e.g., Entrance" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addBoardType">Board Type *</label>
+                    <select id="addBoardType" name="boardType" required>
+                        <option value="">Select Board Type</option>
+                        <option value="Arduino Uno">Arduino Uno</option>
+                        <option value="Arduino Mega">Arduino Mega</option>
+                        <option value="Arduino Nano">Arduino Nano</option>
+                        <option value="NodeMCU">NodeMCU</option>
+                        <option value="ESP32">ESP32</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="addSignalStrength">Signal Strength (%) *</label>
+                    <input type="number" id="addSignalStrength" name="signalStrength" min="0" max="100" value="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="addDeviceStatus">Status *</label>
+                    <select id="addDeviceStatus" name="deviceStatus" required>
+                        <option value="">Select Status</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="warning">Warning</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" data-modal="addDeviceModal">Cancel</button>
+                    <button type="submit" class="btn-save">Add Device</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Status Modal (success/error) -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content status-modal">
+            <div class="modal-header">
+                <h2 id="statusModalTitle">Success</h2>
+                <button class="modal-close" onclick="closeStatusModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="statusModalIcon" class="status-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <p id="statusModalMessage">Operation completed successfully!</p>
+            </div>
+            <div class="form-actions" style="justify-content: center;">
+                <button type="button" class="btn-save" onclick="closeStatusModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p id="confirmModalMessage">Are you sure you want to delete this device?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" class="btn-delete" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Device Modal -->
+    <div id="viewDeviceModal" class="modal">
+        <div class="modal-content view-modal">
+            <div class="modal-header">
+                <h2>Device Details</h2>
+                <button class="modal-close" onclick="closeViewDeviceModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="device-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Device Name:</span>
+                        <span id="viewDeviceName" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Device ID:</span>
+                        <span id="viewDeviceId" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Board Type:</span>
+                        <span id="viewBoardType" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Location:</span>
+                        <span id="viewDeviceLocation" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span id="viewDeviceStatus" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Signal Strength:</span>
+                        <span id="viewSignalStrength" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Data Time:</span>
+                        <span id="viewLastDataTime" class="detail-value">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions" style="justify-content: center;">
+                <button type="button" class="btn-save" onclick="closeViewDeviceModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>Confirm Logout</h2>
+                <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="status-icon warning">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button type="button" class="btn-delete" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content.confirm-modal { background: white; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; z-index: 1001; }
+        .confirm-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; }
+        .confirm-modal .modal-header h2 { margin: 0; font-size: 18px; color: #333; }
+        .confirm-modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+        .confirm-modal .modal-close:hover { color: #333; }
+        .confirm-modal .modal-body { padding: 30px; text-align: center; }
+        .confirm-modal .modal-body p { color: #666; margin: 0; }
+        .status-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
+        .status-icon.warning { background: #fef3c7; color: #f59e0b; }
+        .confirm-modal .form-actions { display: flex; gap: 12px; padding: 20px; border-top: 1px solid #eee; justify-content: flex-end; }
+        .confirm-modal .btn-cancel { padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .confirm-modal .btn-cancel:hover { background: #f5f5f5; }
+        .confirm-modal .btn-delete { padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .confirm-modal .btn-delete:hover { background: #dc2626; }
+    </style>
+</body>
+</html>
