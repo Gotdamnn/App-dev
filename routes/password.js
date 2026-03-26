@@ -31,51 +31,10 @@ router.post('/forgot', async (req, res) => {
       });
     }
 
-    const user = userResult.rows[0];
-    const otp = generateOTP();
-    const expiryTime = new Date(Date.now() + 10 * 60000); // 10 minutes from now
-
-    // Store OTP in password_reset_tokens table  
-    try {
-      await pool.query(
-        `INSERT INTO password_reset_tokens (user_id, email, token, expires_at, created_at)
-         VALUES (NULL, $1, $2, $3, NOW())`,
-        [email, otp, expiryTime]
-      );
-      console.log(`💾 Password reset OTP stored for ${email}: ${otp}`);
-    } catch (dbError) {
-      console.error('❌ Password reset database error:', dbError.message);
-      throw dbError;
-    }
-
-    // 🚀 SEND EMAIL IN BACKGROUND (Non-blocking) - Don't await!
-    console.log(`📧 Sending password reset OTP to ${email} in background...`);
-    (async () => {
-      try {
-        const emailResult = await sendPasswordResetEmail(
-          email,
-          null, // resetLink not needed for OTP-based reset
-          otp,
-          user.name // Pass the actual user name
-        );
-        
-        if (emailResult.success) {
-          console.log(`✅ Password reset OTP sent successfully to ${email}`);
-        } else {
-          console.error(`❌ Failed to send password reset OTP to ${email}:`, emailResult.error);
-        }
-      } catch (emailError) {
-        console.error('❌ Error sending password reset email in background:');
-        console.error('   Error Code:', emailError.code);
-        console.error('   Error Message:', emailError.message);
-      }
-    })(); // Execute immediately without awaiting
-
-    // Return success immediately
+    // Mailer removed for forgot password
     return res.json({
       success: true,
-      message: 'If the email exists, OTP has been sent',
-      note: 'OTP is valid for 10 minutes'
+      message: 'Forgot password mailer is disabled.',
     });
   } catch (error) {
     console.error('Forgot password error:', error);

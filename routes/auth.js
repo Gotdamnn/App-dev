@@ -16,7 +16,7 @@ const generateToken = (userId) => {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, fullName, age, gender } = req.body;
+    const { email, password, name, age, gender } = req.body;
     
     console.log('╔════════════════════════════════════════════╗');
     console.log('║         NEW REGISTRATION REQUEST            ║');
@@ -26,17 +26,17 @@ router.post('/register', async (req, res) => {
     console.log('🔍 Register request body:', JSON.stringify(req.body));
     console.log('📧 Email:', email, '| Type:', typeof email);
     console.log('🔐 Password:', password ? 'provided' : 'missing', '| Type:', typeof password);
-    console.log('👤 FullName:', fullName, '| Type:', typeof fullName);
+    console.log('👤 Name:', name, '| Type:', typeof name);
 
     // Validation
-    if (!email || !password || !fullName) {
-      console.log('❌ Validation failed - Missing fields');
-      return res.status(400).json({
-        success: false,
-        message: 'Email, password, and full name are required',
-        received: { email: !!email, password: !!password, fullName: !!fullName }
-      });
-    }
+      if (!email || !password || !name) {
+        console.log('❌ Validation failed - Missing fields');
+        return res.status(400).json({
+          success: false,
+          message: 'Email, password, and full name are required',
+          received: { email: !!email, password: !!password, name: !!name }
+        });
+      }
 
     // Check if user exists in patients table
     const userExists = await pool.query(
@@ -59,7 +59,7 @@ router.post('/register', async (req, res) => {
       `INSERT INTO patients (email, password, name, age, gender, created_at)
        VALUES ($1, $2, $3, $4, $5, NOW())
        RETURNING id, email, name`,
-      [email, hashedPassword, fullName, age, gender]
+      [email, hashedPassword, name, age, gender]
     );
 
     const user = result.rows[0];
@@ -106,7 +106,7 @@ router.post('/register', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        fullName: user.name,
+          name: user.name,
       },
       token,
     });
@@ -156,14 +156,11 @@ router.post('/login', async (req, res) => {
 
       // Verify password
       let isPasswordValid = false;
-      
-      // Check if password field exists and is not null
       if (employee.password) {
         try {
           isPasswordValid = await bcrypt.compare(password, employee.password);
           console.log(`🔑 Password validation (bcrypt): ${isPasswordValid}`);
         } catch (e) {
-          // If bcrypt fails, try plain text comparison
           isPasswordValid = employee.password === password;
           console.log(`🔑 Password validation (plain text): ${isPasswordValid}`);
         }
@@ -186,6 +183,7 @@ router.post('/login', async (req, res) => {
       const token = generateToken(employee.id);
       console.log(`✅ Employee login successful: ${email}`);
 
+      // Do NOT include password or sensitive fields in response
       res.json({
         success: true,
         message: 'Login successful',
@@ -225,7 +223,6 @@ router.post('/login', async (req, res) => {
         isPasswordValid = await bcrypt.compare(password, patient.password);
         console.log(`🔑 Password validation (bcrypt): ${isPasswordValid}`);
       } catch (e) {
-        // If bcrypt fails, try plain text comparison
         isPasswordValid = patient.password === password;
         console.log(`🔑 Password validation (plain text): ${isPasswordValid}`);
       }
@@ -241,6 +238,7 @@ router.post('/login', async (req, res) => {
       const token = generateToken(patient.id);
       console.log(`✅ Patient login successful: ${email}`);
 
+      // Do NOT include password or sensitive fields in response
       res.json({
         success: true,
         message: 'Login successful',
@@ -360,37 +358,41 @@ router.post('/resend-otp', async (req, res) => {
     const otp = generateOTP();
     const expiryTime = new Date(Date.now() + 10 * 60000); // 10 minutes
 
+    // Store OTP in database (upsert)
     try {
-      // Store new OTP (email_verification_tokens stores email directly, not user_id)
       await pool.query(
         `INSERT INTO email_verification_tokens (email, token, expires_at, is_verified, created_at)
-         VALUES ($1, $2, $3, false, NOW())`,
+         VALUES ($1, $2, $3, false, NOW())
+         ON CONFLICT (email) DO UPDATE SET 
+           token = EXCLUDED.token,
+           expires_at = EXCLUDED.expires_at,
+           is_verified = false,
+           verified_at = NULL`,
         [email, otp, expiryTime]
       );
-      console.log(`💾 OTP stored in database for ${email}: ${otp}`);
-
-      // 🚀 SEND EMAIL IN BACKGROUND (Non-blocking) - Don't await!
-      console.log(`📧 Sending OTP email to ${email} in background...`);
-      (async () => {
-        try {
-          await sendOTPEmail(email, otp, `PatientPulse - Verify Your Email`);
-          console.log(`✅ OTP resent to ${email}`);
-        } catch (emailError) {
-          console.error('❌ Failed to send OTP email in background:', emailError.message);
-        }
-      })(); // Execute immediately without awaiting
-
-      res.json({
-        success: true,
-        message: 'OTP resent successfully. Check your email.',
-      });
     } catch (dbError) {
-      console.error('❌ Database error in resend-otp:', dbError.message);
+      console.error('❌ Failed to store OTP in database (resend):', dbError.message);
       return res.status(500).json({
         success: false,
-        message: 'Failed to resend OTP. Please try again later.',
+        message: 'Failed to store OTP',
       });
     }
+
+    // Send OTP email
+    try {
+      await sendOTPEmail(email, otp, 'PatientPulse - Resend OTP');
+    } catch (emailError) {
+      console.error('❌ Failed to send OTP email (resend):', emailError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send OTP email',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'OTP resent successfully. Check your email.',
+    });
   } catch (error) {
     console.error('Resend OTP error:', error);
     res.status(500).json({
@@ -480,10 +482,26 @@ router.post('/auto-verify-email', async (req, res) => {
   }
 });
 
-// Test SMTP Connection
+// Test SMTP Connection (GET and POST for production compatibility)
 router.get('/test-smtp', async (req, res) => {
   try {
-    console.log('🔍 Testing SMTP connection from /test-smtp endpoint...');
+    console.log('🔍 Testing SMTP connection from /test-smtp endpoint (GET)...');
+    const { testSMTPConnection } = await import('../utils/email.js');
+    const result = await testSMTPConnection();
+    res.json(result);
+  } catch (error) {
+    console.error('❌ SMTP test endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'SMTP test failed',
+      error: error.message,
+    });
+  }
+});
+
+router.post('/test-smtp', async (req, res) => {
+  try {
+    console.log('🔍 Testing SMTP connection from /test-smtp endpoint (POST)...');
     const { testSMTPConnection } = await import('../utils/email.js');
     const result = await testSMTPConnection();
     res.json(result);

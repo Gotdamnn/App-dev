@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { pool } from '../server.js';
-import { sendEmployeeOnboardingEmail } from '../utils/email.js';
+
 
 const router = express.Router();
 
