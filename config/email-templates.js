@@ -403,6 +403,8 @@ For questions or support, please contact our support team.
     }
 };
 
-export const emailVerification = emailTemplates.emailVerification;
-export const passwordReset = emailTemplates.passwordReset;
-export const welcomeEmail = emailTemplates.welcomeEmail;
+module.exports = {
+    emailVerification: emailTemplates.emailVerification,
+    passwordReset: emailTemplates.passwordReset,
+    welcomeEmail: emailTemplates.welcomeEmail
+};
